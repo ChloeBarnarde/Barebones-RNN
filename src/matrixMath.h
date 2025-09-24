@@ -1,6 +1,5 @@
-#ifndef MATRIX_MATH
-#define MATRIX_MATH
-
+#ifndef MATRIX_MATH_H
+#define MATRIX_MATH_H
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -21,7 +20,7 @@ int MDotProd(matrix* a, matrix* b, matrix* output) {
     // need to make sure a->size[1] == b->size[0]
     if (a->size[1] != b->size[0]) {
         printf("Passed Matrices don't have sizes that can be multiplied together a: %d, %d\n", a->size[0], a->size[1]);
-        return -1;
+        return EXIT_FAILURE;
     }
     
     int size[2] = {a->size[0], b->size[1]}; // might need to rewrite this
@@ -39,7 +38,7 @@ int MDotProd(matrix* a, matrix* b, matrix* output) {
             }
         }
     }
-    return 1;
+    return EXIT_SUCCESS;
 }
 
 int MScaler(matrix* a, float b, matrix* output) {
@@ -52,14 +51,14 @@ int MScaler(matrix* a, float b, matrix* output) {
             output->values[CrToIdx(i, j, output)] = output->values[CrToIdx(i, j, output)] * b;
         }
     }
-    return 1;
+    return EXIT_SUCCESS;
 }
 
 int MAdd(matrix* a, matrix* b, matrix* output) {
     if (a->size[0] != b->size[0] && a->size[1] != b->size[1]) {
         printf("Passed matrices didn't have matching sizes! \nA size: %d, %d\nB size: %d, %d", 
             a->size[0], a->size[1], b->size[0], b->size[1]);
-        return -1;
+        return EXIT_FAILURE;
     }
 
     for (int i = 0; i < a->size[0]; i++) {
@@ -69,7 +68,7 @@ int MAdd(matrix* a, matrix* b, matrix* output) {
         }
     }
 
-    return 1;
+    return EXIT_SUCCESS;
 }
 
 // wanna rewrite this so that its one function, cause atm its going through the matrix twice ;-;
@@ -78,7 +77,21 @@ int MSub(matrix* a, matrix* b, matrix* output) {
     MScaler(b, -1, c);
     MAdd(a, c, output);
 
-    return 1;
+    return EXIT_SUCCESS;
+}
+
+
+int MVec(matrix* a, int col, matrix* output) {
+    if (col >= a->size[0]) {
+        // error
+        printf("Passed collumn (%d) is greater than matrix columns (%d)", col, a->size[0]);
+        return EXIT_FAILURE;
+    }
+
+    output->size[0] = 1;
+    output->size[1] = a->size[1]; 
+
+    return EXIT_SUCCESS;
 }
 
 #endif

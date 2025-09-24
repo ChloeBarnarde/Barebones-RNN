@@ -1,5 +1,27 @@
 #include "../matrixMath.h"
 
+
+int TestDotProd() {
+
+}
+
+int TestAdd() {
+
+}
+
+int TestScaler() {
+
+}
+
+int TestSub() {
+
+}
+
+int TestVector() {
+
+}
+
+
 int main() {
     matrix* m1 = malloc(sizeof(matrix));
     matrix* m2 = malloc(sizeof(matrix));
