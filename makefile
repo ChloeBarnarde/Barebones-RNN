@@ -1,3 +1,6 @@
-all:
-	@echo "Beans 1"
-	echo "Beans 2"
+
+
+Test:
+	gcc src/test/matrixMathTest.c src/matrixMath.h -o test
+	./test
+
