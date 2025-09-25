@@ -27,18 +27,46 @@ struct rnn {
     matrix* bh;
     matrix* by;
     int timeStep;
+    int activationFunctions[2];
 } typedef rnn;
 
 int step(rnn* r) {
 
 }
 // one to one
-int evaluate(rnn* r, float* x[]) {
+matrix* evaluate(rnn* r, float* x[]) {
     //find h
     // need to step backwards through time (onlt need if you have multiple time steps)
-    
+    matrix* h0 = (matrix*)malloc(sizeof(matrix));
+    h0->size[0] = r->hiddenSize;
+    h0->size[1] = 1;
+    // initialize with zeros
+    for (int i = 0; i < r->hiddenSize; i++)
+    {
+        h0->values[i] = 0;
+    }
+    matrix* h = (matrix*)malloc(sizeof(matrix));
+    h->size[0] = r->hiddenSize;
+    h->size[1] = 1;
+
+    // before applying activation function
+    matrix* a = (matrix*)malloc(sizeof(matrix));
+    MAdd(r->Whh, h0, a);
+    // apply activation function
+    // loop with for loop
     // find y
+
+    matrix* y = (matrix*)malloc(sizeof(matrix));
+    y->size[0] = r->outputSize;
+    y->size[1] = 1;
+
+    // before activation
+    // apply activation
+
+
+    // return y
     
+    return y;
 }
 
 int TrainRNN(rnn* r, float* trainX[], float* trainY[]) {

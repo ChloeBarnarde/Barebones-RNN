@@ -48,4 +48,5 @@ int main() {
 
     
     printf("%f\n", m3->values[CrToIdx(0, 0, m3)]);
+    printf("%f\n", m3->size[0]);
 }
