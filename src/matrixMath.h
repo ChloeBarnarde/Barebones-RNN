@@ -4,171 +4,100 @@
 #include <stdlib.h>
 
 // currently just a 2d matrix :p
-struct {
+
+/// @brief represents matrix. It holds pointers to values pretaining to it
+typedef struct {
     //int* dimensions; // can be added later ig
 
+    //pointer of size 2, holding x and y sizes
     int* size;
-    float* values;
-} typedef matrix;
+    //pointer of to all values
+    double* values;
+} matrix;
 
 
-int CrToIdx(int col, int row, matrix* m) {
-    return col * m->size[1] + row; 
-}
+/* ===Creation===*/
 
+/// @brief Allocates memory for matrix of given size and initalizes values to 0. 
+/// @param colSize amount of collums
+/// @param rowSize amount of rows
+/// @return pointer to matrix location in memory
+matrix* Matrix_Create(int colSize, int rowSize);
 
-/// @brief Dot Product of a and b. Doesn't mutate a or b
-/// @param a matrix* a
-/// @param b matrix* b
-/// @return result of dot product
-matrix* MDotProd(matrix* a, matrix* b, matrix* output) {
-    // need to make sure a->size[1] == b->size[0]
-    if (a->size[1] != b->size[0]) {
-        printf("Passed Matrices don't have sizes that can be multiplied together a: %d, %d\n", a->size[0], a->size[1]);
-        return output;
-    }
-    
-    int size[2] = {a->size[0], b->size[1]}; // might need to rewrite this
+/// @brief Allocates memory for matrix of given size and initalizes values with passed function
+/// @param colSize amount of collumns
+/// @param rowSize amount of rows
+/// @param fprt initalization value function
+/// @return pointer to matrix location in memory
+matrix* Matrix_Initialize(int colSize, int rowSize, float (*fprt)());
 
-    InitializeValues(output, size);
-    
-    // just gonna use naive implementation for now
-    for (int i = 0; i < a->size[0]; i++) {
-        for (int j = 0; j < b->size[1]; j++) {
-            for (int p = 0; p < a->size[1]; p++) {
-                output->values[CrToIdx(i, j, output)] += a->values[CrToIdx(i, p, a)] * b->values[CrToIdx(p, j, b)]; // need to double check this ig
-            }
-        }
-    }
-    return output;
-}
-
+/// @brief frees all the memory related to the passed matrix
+/// @param m matrix to free memroy of
+void Matrix_Free(matrix* m);
 
 // this needs to be heavily modified
-int InitializeValues(matrix* m, float sizeGoal[2]) {
-    if (m->values == NULL) {
-        m->values = (float *)malloc(sizeGoal[0] * sizeof(float) * sizeGoal[1] * sizeof(float));
-        return EXIT_SUCCESS;
-    }
-
-    if (m->size == NULL) {
-        // don't know size sooo??? do above
-        m->size[0] = sizeGoal[0];
-        m->size[1] = sizeGoal[1];
-        free(m->values);
-        m->values = (float *)malloc(sizeGoal[0] * sizeof(float) * sizeGoal[1] * sizeof(float));
-        return EXIT_SUCCESS;
-    }
+int InitializeValues(matrix* m, float sizeGoal[2]);
 
 
-    if (m->size[0] == sizeGoal[0] && m->size[1] == sizeGoal[2]) {
-        return EXIT_SUCCESS;
-    }
+/* ===Matrix Math=== */
 
-    m->size[0] = sizeGoal[0];
-    m->size[1] = sizeGoal[1];
-    free(m->values);
-    m->values = (float *)malloc(sizeGoal[0] * sizeof(float) * sizeGoal[1] * sizeof(float));
-
-}
-
-// /// @brief Multiplies all elements in a with b. Doesn't mutate a
-// /// @param a Matrix pointer
-// /// @param b Scaler to multiply with
-// /// @return new matrix from the resault of a * b
-// matrix* MScaler(matrix* a, float b) {
-//     matrix* output = (matrix*)malloc(sizeof(matrix));
-//     int size[2] = {a->size[0], a->size[1]};
-//     output->size = &size[0];
-
-//     for (int i = 0; i < a->size[0]; i++) {
-//         for (int j = 0; j < a->size[1]; j++)
-//         {
-//             output->values[CrToIdx(i, j, output)] = output->values[CrToIdx(i, j, output)] * b;
-//         }
-//     }
-//     return output;
-// }
-
-// matrix* MElementWiseFuncF(matrix* a, matrix* output, float (*fptr)(float)) {
-
-//     int size[2] = {a->size[0], a->size[1]};
-//     output->size = &size[0];
-    
-//     if (output->values == NULL)
-//     for (int i = 0; i < a->size[0]; i++) {
-//         for (int j = 0; j < a->size[1]; j++)
-//         {
-//             output->values[CrToIdx(i, j, output)] = fptr(a->values[CrToIdx(i, j, a)]);
-//         }
-//     }
-
-//     return output;
-// }
+/// @brief Dot Product of a and b. Mutates a. Doesn't mutate b.
+/// @param a matrix* a
+/// @param b matrix* b
+/// @return Exit status
+int Matrix_DotProd(matrix* a, matrix* b, matrix* output);
 
 
-// matrix* MElementWiseFuncFF(matrix* a, matrix* b, matrix* output, float (*fptrs)(float, float)) {
-    
-//     if (a->size[0] != b->size[0] && a->size[1] != b->size[1]) {
-//         printf("Passed matrices didn't have matching sizes! \nA size: %d, %d\nB size: %d, %d", 
-//             a->size[0], a->size[1], b->size[0], b->size[1]);
-//     }
 
-//     int size[2] = {a->size[0], a->size[1]};
-//     output->size = &size[0];
+/// @brief Multiplies all elements in a with b. Mutates a.
+/// @param a Matrix pointer
+/// @param b Scaler to multiply with
+/// @return Exit status (0 = success, 1= faliure)
+int Matrix_Scaler(matrix* a, float b);
 
+/// @brief Foreach element in a, the function pointer is applied. Mutates a
+/// @param a Initial matrix 
+/// @param fptr Function to Apply
+/// @return Exit status
+int Matrix_ElemetWiseFunc1M(matrix* a, float (*fptr)(float));
 
-//     for (int i = 0; i < a->size[0]; i++) {
-//         for (int j = 0; j < a->size[1]; j++)
-//         {
-//             output->values[CrToIdx(i, j, output)] = fptr(a->values[CrToIdx(i, j, a)], b->values(CrToIdx(i, j, b)));
-//         }
-//     }
-
-//     return output;    
-// }
-
-
-// float b = 0;
-// float add(float a) {
-//     return  a+ b;
-// }
-// matrix* MAdd(matrix* a, matrix* b) {
-    
-//     matrix* output = (matrix*)malloc(sizeof(matrix));
-
-//     if (a->size[0] != b->size[0] && a->size[1] != b->size[1]) {
-//         printf("Passed matrices didn't have matching sizes! \nA size: %d, %d\nB size: %d, %d", 
-//             a->size[0], a->size[1], b->size[0], b->size[1]);
-//         return EXIT_FAILURE;
-//     }
+/// @brief Foreach element in a, a(ij), the function pointer is 
+/// applied with a(ij) and b(ij). Mutates a. Doesn't mutate b.
+/// @param a matrix of A 
+/// @param b matrix of B
+/// @param fptrs Function to apply
+/// @return Exit status
+int Matrix_ElementWiseFunc2M(matrix* a, matrix* b, float (*fptrs)(float, float));
 
 
-// }
+int Matrix_Add(matrix* a, matrix* b);
 
 
-// // wanna rewrite this so that its one function, cause atm its going through the matrix twice ;-;
-// int MSub(matrix* a, matrix* b, matrix* output) {
-//     matrix* c = malloc(sizeof(matrix));
-//     MScaler(b, -1, c);
-//     MAdd(a, c, output);
 
-//     return EXIT_SUCCESS;
-// }
+int Matrix_Sub(matrix* a, matrix* b, matrix* output);
 
 
-// int MVec(matrix* a, int col, matrix* output) {
-//     if (col >= a->size[0]) {
-//         // error
-//         printf("Passed collumn (%d) is greater than matrix columns (%d)", col, a->size[0]);
-//         return EXIT_FAILURE;
-//     }
+/* ===Transformation=== */
 
-//     output->size[0] = 1;
-//     output->size[1] = a->size[1]; 
+int Matrix_Transpose(matrix* a);
 
-//     return EXIT_SUCCESS;
-// }
+/* ===Misc=== */
+
+/// @brief sets values from one to the other.
+/// @param from matrix to copy from (stays unmodified)
+/// @param to matrix to copy to (is modified)
+/// @return Exit Status
+int Matrix_Copy(matrix* from, matrix* to);
+
+int MVec(matrix* a, int col, matrix* output);
 
 
+/* ===Printing=== */
+
+int Matrix_Print(matrix* m);
+
+
+/* ===Get/Set=== */
+double Matrix_Get(matrix* m, int col, int row);
+double Matrix_Set(matrix* m, int col, int row, double value);
 #endif
