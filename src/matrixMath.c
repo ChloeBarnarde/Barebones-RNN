@@ -1,11 +1,55 @@
 #include "matrixMath.h"
+#include <stdlib.h>
+#include <stdbool.h>
 
-matrix* Matrix_Create(int sizeX, int sizeY) {
 
+
+
+/* ===Helper Methods=== */
+
+int CrToIdx(int col, int row, matrix* m) {
+    return col * m->size[1] + row; 
 }
 
-matrix* Matrix_Initialize(int sizeX, int sizeY, float (*fprt)()) {
+/// @brief checks bounds
+/// @param matrix to check
+/// @param collum
+/// @param row
+/// @return true if in bounds, false otherwise.
+bool CheckBounds(matrix* m, int col, int row) {
+    if (col < 0 || row < 0)
+        return false;
 
+    if (col >= m->size[1] || row >= m->size[0]) 
+        return false;
+
+    return true;
+}
+
+double zero() {
+    return 0;
+}
+/* ===Creation=== */
+matrix* Matrix_Create(int colSize, int rowSize) {
+   return Matrix_Initialize(colSize, rowSize, &zero);
+}
+
+matrix* Matrix_Initialize(int colSize, int rowSize, double (*fprt)()) {
+    matrix* m = (matrix*)malloc(sizeof(matrix));
+    // allocate memory
+    m->size = malloc(sizeof(int)*2);
+    m->values = malloc(sizeof(double)*colSize*rowSize);
+    // set values
+    m->size[0] = rowSize;
+    m->size[1] = colSize;
+
+    for (int x = 0; x < rowSize; x++) {
+        for(int y = 0; y < colSize; y++) {
+           m->values[y*colSize+x] = fprt(); 
+        }
+    }
+
+    return m;
 }
 
 
@@ -59,8 +103,27 @@ int Matrix_DotProd(matrix* a, matrix* b, matrix* output) {
 }
 
 
-/* ===Helper Methods=== */
+/* ===Get/Set=== */
 
-int CrToIdx(int col, int row, matrix* m) {
-    return col * m->size[1] + row; 
+
+double Matrix_Get(matrix *m, int col, int row) {
+    if (!CheckBounds(m, col, row)) {
+        printf("col and row out of bounds of matrix size");
+        return 1;
+    }
+
+    return m->values[col * m->size[1] + row];
 }
+
+
+int Matrix_Set(matrix* m, int col, int row, double value) {
+   if (!CheckBounds(m, col, row))
+       return EXIT_FAILURE;
+
+   m->values[col * m->size[1] + row] = value;
+
+   return EXIT_SUCCESS;
+}
+
+
+

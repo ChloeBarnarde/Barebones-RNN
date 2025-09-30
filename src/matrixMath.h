@@ -29,7 +29,7 @@ matrix* Matrix_Create(int colSize, int rowSize);
 /// @param rowSize amount of rows
 /// @param fprt initalization value function
 /// @return pointer to matrix location in memory
-matrix* Matrix_Initialize(int colSize, int rowSize, float (*fprt)());
+matrix* Matrix_Initialize(int colSize, int rowSize, double (*fprt)());
 
 /// @brief frees all the memory related to the passed matrix
 /// @param m matrix to free memroy of
@@ -98,6 +98,21 @@ int Matrix_Print(matrix* m);
 
 
 /* ===Get/Set=== */
+
+/// @brief gets value at passed col row.
+/// @param matrix to read from
+/// @param collum
+/// @param row
+/// @return value at position
 double Matrix_Get(matrix* m, int col, int row);
-double Matrix_Set(matrix* m, int col, int row, double value);
+
+/// @brief sets value at given col, row. Mutates matrix.
+/// @param matrix to update
+/// @param collum
+/// @param row
+/// @return exit status
+int Matrix_Set(matrix* m, int col, int row, double value);
+
+
+
 #endif
