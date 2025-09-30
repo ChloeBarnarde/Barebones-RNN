@@ -96,6 +96,7 @@ int MVec(matrix* a, int col, matrix* output);
 
 int Matrix_Print(matrix* m);
 
+int Matrix_Printf(matrix *m, int decimalPlaces);
 
 /* ===Get/Set=== */
 

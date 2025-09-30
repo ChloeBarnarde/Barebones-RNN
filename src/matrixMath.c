@@ -1,4 +1,5 @@
 #include "matrixMath.h"
+#include <math.h>
 #include <stdlib.h>
 #include <stdbool.h>
 
@@ -26,10 +27,24 @@ bool CheckBounds(matrix* m, int col, int row) {
     return true;
 }
 
+bool CheckNull(matrix* m) {
+    if (m==NULL)
+        return false;
+    if (m->values == NULL)
+        return false;
+    if (m->size == NULL)
+        return false;
+    return true;
+}
+
 double zero() {
     return 0;
 }
+
+
+
 /* ===Creation=== */
+
 matrix* Matrix_Create(int colSize, int rowSize) {
    return Matrix_Initialize(colSize, rowSize, &zero);
 }
@@ -81,6 +96,7 @@ int InitializeValues(matrix* m, float sizeGoal[2]) {
 
 }
 
+
 int Matrix_DotProd(matrix* a, matrix* b, matrix* output) {
     if (a->size[1] != b->size[0]) {
         printf("Passed Matrices don't have sizes that can be multiplied together a: %d, %d\n", a->size[0], a->size[1]);
@@ -102,6 +118,34 @@ int Matrix_DotProd(matrix* a, matrix* b, matrix* output) {
     return EXIT_SUCCESS;
 }
 
+
+/* ===Printing=== */
+
+int Matrix_Printf(matrix *m, int decimalPlaces) {
+
+   if (CheckNull(m))
+       return EXIT_FAILURE;
+
+    double maxValue = 0;
+    for (int row = 0; row < m->size[0]; row++) {
+        for (int col = 0; col < m->size[1]; col++) {
+            if (maxValue < m->values[col * m->size[1] + row]) 
+                maxValue = m->values[col * m->size[1] + row];
+
+        }
+    }
+
+    int cellWidth = log10(maxValue) + 2 + decimalPlaces;
+
+    for (int row = 0; row < m->size[0]; row++) {
+        for (int col = 0; col < m->size[1]; col++) {
+            printf("%-*.*f", cellWidth, decimalPlaces, m->values[col * m->size[1] + row]);
+        }
+        printf("\n");
+    }
+
+    return EXIT_SUCCESS;
+}
 
 /* ===Get/Set=== */
 
