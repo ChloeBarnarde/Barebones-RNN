@@ -9,7 +9,7 @@
 typedef struct {
     //int* dimensions; // can be added later ig
 
-    //pointer of size 2, holding x and y sizes
+    //pointer of size 2, holding row and col sizes respectivaley
     int* size;
     //pointer of to all values
     double* values;
@@ -45,21 +45,19 @@ int InitializeValues(matrix* m, float sizeGoal[2]);
 /// @param a matrix* a
 /// @param b matrix* b
 /// @return Exit status
-int Matrix_DotProd(matrix* a, matrix* b, matrix* output);
-
-
+int Matrix_DotProd(matrix* a, matrix* b);
 
 /// @brief Multiplies all elements in a with b. Mutates a.
 /// @param a Matrix pointer
 /// @param b Scaler to multiply with
 /// @return Exit status (0 = success, 1= faliure)
-int Matrix_Scaler(matrix* a, float b);
+int Matrix_Scaler(matrix* a, double b);
 
 /// @brief Foreach element in a, the function pointer is applied. Mutates a
 /// @param a Initial matrix 
 /// @param fptr Function to Apply
 /// @return Exit status
-int Matrix_ElemetWiseFunc1M(matrix* a, float (*fptr)(float));
+int Matrix_ElemetWiseFunc1M(matrix* a, double (*fptr)(double));
 
 /// @brief Foreach element in a, a(ij), the function pointer is 
 /// applied with a(ij) and b(ij). Mutates a. Doesn't mutate b.
@@ -67,19 +65,28 @@ int Matrix_ElemetWiseFunc1M(matrix* a, float (*fptr)(float));
 /// @param b matrix of B
 /// @param fptrs Function to apply
 /// @return Exit status
-int Matrix_ElementWiseFunc2M(matrix* a, matrix* b, float (*fptrs)(float, float));
+int Matrix_ElementWiseFunc2M(matrix* a, matrix* b, double (*fptrs)(double, double));
 
-
+/// @brief Adds the second matrix to the first. Mutates a. Doesn't mutate b
+/// @param a matrix to add to
+/// @param b matrix to add from
+/// @return exit status
 int Matrix_Add(matrix* a, matrix* b);
 
-
-
-int Matrix_Sub(matrix* a, matrix* b, matrix* output);
+/// @brief Subtracts the second matrix from the first. Mutates a. Doesn't mutate b
+/// @param a matrix to subtract from
+/// @param b matrix to subtract
+/// @return exit status
+int Matrix_Sub(matrix* a, matrix* b);
 
 
 /* ===Transformation=== */
 
+/// @brief switches rows and columns
+/// @param a matrix to transpose. Mutates its values
+/// @return exit status
 int Matrix_Transpose(matrix* a);
+
 
 /* ===Misc=== */
 
@@ -89,21 +96,39 @@ int Matrix_Transpose(matrix* a);
 /// @return Exit Status
 int Matrix_Copy(matrix* from, matrix* to);
 
-int MVec(matrix* a, int col, matrix* output);
+/// @brief get sepcified column from passed matrix
+/// @param m matrix to get column from. Isn't modified
+/// @param col column number to get 
+/// @return new matrix. Returns null if error encountered.
+matrix* Matrix_VectorCol(matrix* m, int col);
 
+/// @brief get sepcified row from passed matrix
+/// @param m matrix to get row from. Isn't modified
+/// @param row row number to get 
+/// @return new matrix. Returns null if error encountered.
+matrix* Matrix_VectorRow(matrix* m, int row);
 
 /* ===Printing=== */
 
+
+/// @brief prints matrix to stdout, with decimal precision of 2
+/// @param m matrix to print
+/// @return exit status
 int Matrix_Print(matrix* m);
 
+
+/// @brief prints matrix to stdout
+/// @param m matrix to print
+/// @param decimalPlaces decimal precision
+/// @return exit status
 int Matrix_Printf(matrix *m, int decimalPlaces);
 
 /* ===Get/Set=== */
 
 /// @brief gets value at passed col row.
-/// @param matrix to read from
-/// @param collum
-/// @param row
+/// @param m matrix to read from
+/// @param col collumn
+/// @param row row
 /// @return value at position
 double Matrix_Get(matrix* m, int col, int row);
 
