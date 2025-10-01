@@ -35,9 +35,6 @@ matrix* Matrix_Initialize(int colSize, int rowSize, double (*fprt)());
 /// @param m matrix to free memroy of
 void Matrix_Free(matrix* m);
 
-// this needs to be heavily modified
-int InitializeValues(matrix* m, float sizeGoal[2]);
-
 
 /* ===Matrix Math=== */
 

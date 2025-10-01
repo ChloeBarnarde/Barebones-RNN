@@ -90,7 +90,8 @@ int Matrix_DotProd(matrix* a, matrix* b) {
         return EXIT_FAILURE;
     }
 
-    matrix* temp = Matrix_Copy(a, Matrix_Create(a->size[0], a->size[1]));
+    matrix* temp = Matrix_Create(a->size[0], a->size[1]);
+    Matrix_Copy(a, temp);
     a->size[1] = b->size[1];
 
     // just gonna use naive implementation for now
@@ -150,7 +151,7 @@ int Matrix_ElementWiseFunc2M(matrix* a, matrix* b, double (*fptrs)(double, doubl
     for (int col = 0; col < a->size[1]; col++)
     {
         for (int row = 0; row < a->size[0]; row++) {
-            a->values[col * a->size[0] + row] = fptr(a->values[col * a->size[0] + row], 
+            a->values[col * a->size[0] + row] = fptrs(a->values[col * a->size[0] + row], 
                 b->values[col * b->size[0] + row]);
         }
     }
@@ -276,7 +277,7 @@ int Matrix_Printf(matrix *m, int decimalPlaces) {
         }
     }
 
-    int cellWidth = log10(maxValue) + 2 + decimalPlaces;
+    int cellWidth = (round(log10(maxValue))) + 2 + decimalPlaces;
 
     for (int row = 0; row < m->size[0]; row++) {
         for (int col = 0; col < m->size[1]; col++) {

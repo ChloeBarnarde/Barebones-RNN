@@ -1,6 +1,6 @@
 
 
 Test:
-	gcc src/test/matrixMathTest.c src/matrixMath.h -o test.out
+	$(CC) src/test/matrixMathTest.c src/matrixMath.h src/matrixMath.c -lm -o test.out
 	./test.out
 
