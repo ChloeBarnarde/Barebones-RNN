@@ -9,7 +9,7 @@
 /* ===Helper Methods=== */
 
 int CrToIdx(int col, int row, matrix* m) {
-    return col * m->size[0] + row; 
+    return col * m->size[1] + row; 
 }
 
 /// @brief checks bounds
@@ -17,7 +17,7 @@ int CrToIdx(int col, int row, matrix* m) {
 /// @param collum
 /// @param row
 /// @return true if in bounds, false otherwise.
-bool CheckBounds(matrix* m, int col, int row) {
+bool CheckBounds(matrix* m, int row, int col) {
     if (col < 0 || row < 0)
         return false;
 
@@ -54,22 +54,22 @@ double Add(double a, double b) {
 
 /* ===Creation=== */
 
-matrix* Matrix_Create(int colSize, int rowSize) {
-   return Matrix_Initialize(colSize, rowSize, &zero);
+matrix* Matrix_Create(int rows, int cols) {
+   return Matrix_Initialize(rows, cols, &zero);
 }
 
-matrix* Matrix_Initialize(int colSize, int rowSize, double (*fprt)()) {
+matrix* Matrix_Initialize(int rows, int cols, double (*fprt)()) {
     matrix* m = (matrix*)malloc(sizeof(matrix));
     // allocate memory
     m->size = malloc(sizeof(int)*2);
-    m->values = malloc(sizeof(double)*colSize*rowSize);
+    m->values = malloc(sizeof(double)*rows*cols);
     // set values
-    m->size[0] = rowSize;
-    m->size[1] = colSize;
+    m->size[0] = rows;
+    m->size[1] = cols;
 
-    for (int x = 0; x < rowSize; x++) {
-        for(int y = 0; y < colSize; y++) {
-           m->values[y*rowSize+x] = fprt(); 
+    for (int y = 0; y < rows; y++) {
+        for(int x = 0; x < cols; x++) {
+           m->values[y*cols+x] = fprt(); 
         }
     }
 
@@ -114,10 +114,10 @@ int Matrix_Scaler(matrix* a, double b) {
     if (!CheckNull(a))
         return EXIT_FAILURE;
     
-    for (int col = 0; col < a->size[1]; col++)
+    for (int rowi = 0; rowi < a->size[0]; rowi++)
     {
-        for (int row = 0; row < a->size[0]; row++) {
-            a->values[col * a->size[0] + row] = a->values[col * a->size[0] + row] * b;
+        for (int coli = 0; coli < a->size[1]; coli++) {
+            a->values[rowi * a->size[1] + coli] = a->values[rowi * a->size[1] + coli] * b;
         }
     }
  
@@ -129,14 +129,14 @@ int Matrix_Scaler(matrix* a, double b) {
 int Matrix_ElemetWiseFunc1M(matrix* a, double (*fptr)(double)) {
     if (!CheckNull(a))
         return EXIT_FAILURE;
-    
-    for (int col = 0; col < a->size[1]; col++)
+
+    for (int rowi = 0; rowi < a->size[0]; rowi++)
     {
-        for (int row = 0; row < a->size[0]; row++) {
-            a->values[col * a->size[0] + row] =  fptr(a->values[col * a->size[0] + row]);
+        for (int coli = 0; coli < a->size[1]; coli++) {
+            a->values[rowi * a->size[1] + coli] = fptr(a->values[rowi * a->size[1] + coli]);
         }
     }
-
+    
     return EXIT_SUCCESS;
 }
 
@@ -148,11 +148,11 @@ int Matrix_ElementWiseFunc2M(matrix* a, matrix* b, double (*fptrs)(double, doubl
     if (a->size[0] != b->size[0] || a->size[1] != b->size[1])
         return EXIT_FAILURE;
     
-    for (int col = 0; col < a->size[1]; col++)
+    for (int rowi = 0; rowi < a->size[0]; rowi++)
     {
-        for (int row = 0; row < a->size[0]; row++) {
-            a->values[col * a->size[0] + row] = fptrs(a->values[col * a->size[0] + row], 
-                b->values[col * b->size[0] + row]);
+        for (int coli = 0; coli < a->size[1]; coli++) {
+            a->values[rowi * a->size[1] + coli] = fptrs(a->values[rowi * a->size[1] + coli],
+                b->values[rowi * b->size[1] + coli]);
         }
     }
 
@@ -186,17 +186,14 @@ int Matrix_Transpose(matrix* a) {
     a->size[1] = tempSize;
 
     // switch values???
-    for (int col = 0; col < temp->size[1]; col++)
+    for (int rowi = 0; rowi < a->size[0]; rowi++)
     {
-        for (int row = 0; row < temp->size[0]; row++)
-        {
-            a->values[col * a->size[0] + row] = temp->values[row * temp->size[0] + col];
+        for (int coli = 0; coli < a->size[1]; coli++) {
+            a->values[rowi * a->size[1] + coli] = temp->values[coli * temp->size[1] + rowi];
         }
-        
     }
 
     return EXIT_SUCCESS;
-    
 }
 
 
@@ -216,34 +213,15 @@ int Matrix_Copy(matrix* from, matrix* to) {
         to->values = malloc(sizeof(double) * from->size[0] * from->size[1]);
     }
 
-    for (int col = 0; col < from->size[1]; col++)
+    for (int rowi = 0; rowi < from->size[0]; rowi++)
     {
-        for (int row = 0; row < from->size[0]; row++)
-        {
-            to->values[col * from->size[0] + row] = from->values[col * from->size[0] + row];
+        for (int coli = 0; coli < from->size[1]; coli++) {
+            to->values[rowi * from->size[1] + coli] = from->values[rowi * from->size[1] + coli];
         }
     }
-    
     return EXIT_SUCCESS;
 }
 
-
-matrix* Matrix_VectorCol(matrix* m, int col) {
-    if (!CheckNull(m))
-        return NULL;
-    
-    if (m->size[1] >= col)
-        return NULL;
-    
-    matrix* new = Matrix_Create(col, m->size[0]);
-
-    for (int i = 0; i < m->size[0]; i++)
-    {
-        new->values[i] = m->values[col * m->size[0] + i];
-    }
-    
-    return new;
-}
 
 matrix* Matrix_VectorRow(matrix* m, int row) {
     if (!CheckNull(m))
@@ -252,36 +230,80 @@ matrix* Matrix_VectorRow(matrix* m, int row) {
     if (m->size[0] >= row)
         return NULL;
     
-    matrix* new = Matrix_Create(m->size[1], row);
+    matrix* new = Matrix_Create(1, m->size[1]);
 
     for (int i = 0; i < m->size[1]; i++)
     {
-        new->values[i] = m->values[i * m->size[0]];
+        new->values[i] = m->values[row * m->size[1] + i];
     }
     
     return new;
 }
+
+matrix* Matrix_VectorCol(matrix* m, int col) {
+    if (!CheckNull(m))
+        return NULL;
+    
+    if (m->size[1] >= col)
+        return NULL;
+    
+    matrix* new = Matrix_Create(m->size[0], 1);
+
+    for (int i = 0; i < m->size[0]; i++)
+    {
+        new->values[i] = m->values[i * m->size[1]];
+    }
+    
+    return new;
+}
+
+int Matrix_Equals(matrix* a, matrix* b) {
+    if (!CheckNull(a) || !CheckNull(b))
+        return false;
+    
+    if (a->size[0] != b->size[0] || a->size[1] != b->size[1])
+        return false;
+    
+    for (int rowi = 0; rowi < a->size[0]; rowi++)
+    {
+        for (int coli = 0; coli < a->size[1]; coli++)
+        {
+            if (a->values[rowi * a->size[1] + coli] != b->values[rowi * b->size[1] + coli])
+                return false;
+        }
+    }
+    
+    return true;
+}
+
 /* ===Printing=== */
 
 int Matrix_Printf(matrix *m, int decimalPlaces) {
 
-   if (CheckNull(m))
+   if (!CheckNull(m))
        return EXIT_FAILURE;
 
     double maxValue = 0;
-    for (int row = 0; row < m->size[0]; row++) {
-        for (int col = 0; col < m->size[1]; col++) {
-            if (maxValue < m->values[col * m->size[1] + row]) 
-                maxValue = m->values[col * m->size[1] + row];
-
+    for (int rowi = 0; rowi < m->size[0]; rowi++)
+    {
+        for (int coli = 0; coli < m->size[1]; coli++) {
+            if (maxValue < m->values[rowi * m->size[1] + coli])
+                maxValue = m->values[rowi * m->size[1] + coli];
         }
     }
 
     int cellWidth = (round(log10(maxValue))) + 2 + decimalPlaces;
 
-    for (int row = 0; row < m->size[0]; row++) {
-        for (int col = 0; col < m->size[1]; col++) {
-            printf("%-*.*f", cellWidth, decimalPlaces, m->values[col * m->size[1] + row]);
+    // for (int row = 0; row < m->size[0]; row++) {
+    //     for (int col = 0; col < m->size[1]; col++) {
+    //         printf("%-*.*f", cellWidth, decimalPlaces, m->values[col * m->size[1] + row]);
+    //     }
+    //     printf("\n");
+    // }
+
+    for (int rowi = 0; rowi < m->size[0]; rowi++) {    
+        for (int coli = 0; coli < m->size[1]; coli++) {
+            printf("%-*.*f", cellWidth, decimalPlaces, m->values[rowi * m->size[1] + coli]);
         }
         printf("\n");
     }
@@ -297,22 +319,22 @@ int Matrix_Print(matrix* m) {
 
 /* ===Get/Set=== */
 
-double Matrix_Get(matrix *m, int col, int row) {
-    if (!CheckBounds(m, col, row)) {
+double Matrix_Get(matrix *m, int row, int col) {
+    if (!CheckBounds(m, row, col)) {
         printf("col and row out of bounds of matrix size");
-        return 1;
+        return NAN;
     }
 
-    return m->values[col * m->size[0] + row];
+    return m->values[row * m->size[1] + col];
 }
 
 
 
-int Matrix_Set(matrix* m, int col, int row, double value) {
-   if (!CheckBounds(m, col, row))
+int Matrix_Set(matrix* m, int row, int col, double value) {
+   if (!CheckBounds(m, row, col))
        return EXIT_FAILURE;
 
-   m->values[col * m->size[0] + row] = value;
+   m->values[row * m->size[1] + col] = value;
 
    return EXIT_SUCCESS;
 }

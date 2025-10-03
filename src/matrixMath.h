@@ -2,6 +2,7 @@
 #define MATRIX_MATH_H
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 
 // currently just a 2d matrix :p
 
@@ -9,7 +10,7 @@
 typedef struct {
     //int* dimensions; // can be added later ig
 
-    //pointer of size 2, holding row and col sizes respectivaley
+    //pointer of size 2, holding amount of rows and cols respectivaley
     int* size;
     //pointer of to all values
     double* values;
@@ -19,17 +20,25 @@ typedef struct {
 /* ===Creation===*/
 
 /// @brief Allocates memory for matrix of given size and initalizes values to 0. 
-/// @param colSize amount of collums
-/// @param rowSize amount of rows
+/// @param rows amount of rows
+/// @param cols amount of collums
 /// @return pointer to matrix location in memory
-matrix* Matrix_Create(int colSize, int rowSize);
+matrix* Matrix_Create(int rows, int cols);
 
 /// @brief Allocates memory for matrix of given size and initalizes values with passed function
-/// @param colSize amount of collumns
-/// @param rowSize amount of rows
+/// @param rows amount of rows
+/// @param cols amount of columns
 /// @param fprt initalization value function
 /// @return pointer to matrix location in memory
-matrix* Matrix_Initialize(int colSize, int rowSize, double (*fprt)());
+matrix* Matrix_Initialize(int rows, int cols, double (*fprt)());
+
+
+/// @brief Create and Initalize a matrix with passed values
+/// @param cols amount of columns
+/// @param rows amount of columns
+/// @param ... values to initalize matrix with
+/// @return new matrix pointer
+matrix* Matrix_InitializeVarArg(int rows, int cols, ...);
 
 /// @brief frees all the memory related to the passed matrix
 /// @param m matrix to free memroy of
@@ -93,6 +102,8 @@ int Matrix_Transpose(matrix* a);
 /// @return Exit Status
 int Matrix_Copy(matrix* from, matrix* to);
 
+////// Might make a seperate thing for vectors??? //////
+
 /// @brief get sepcified column from passed matrix
 /// @param m matrix to get column from. Isn't modified
 /// @param col column number to get 
@@ -104,6 +115,15 @@ matrix* Matrix_VectorCol(matrix* m, int col);
 /// @param row row number to get 
 /// @return new matrix. Returns null if error encountered.
 matrix* Matrix_VectorRow(matrix* m, int row);
+
+
+/// @brief compare matrix values to see if they're equal
+/// @param a first matrix
+/// @param b second matrix
+/// @return 0 if not equal, 1 if equal
+int Matrix_Equals(matrix* a, matrix* b);
+
+
 
 /* ===Printing=== */
 
@@ -124,17 +144,17 @@ int Matrix_Printf(matrix *m, int decimalPlaces);
 
 /// @brief gets value at passed col row.
 /// @param m matrix to read from
-/// @param col collumn
-/// @param row row
-/// @return value at position
-double Matrix_Get(matrix* m, int col, int row);
+/// @param row row index
+/// @param col collumn index
+/// @return value at position, returns NAN if an issue
+double Matrix_Get(matrix* m, int row, int col);
 
 /// @brief sets value at given col, row. Mutates matrix.
 /// @param matrix to update
-/// @param collum
-/// @param row
+/// @param row row index
+/// @param col collumn index
 /// @return exit status
-int Matrix_Set(matrix* m, int col, int row, double value);
+int Matrix_Set(matrix* m, int row, int col, double value);
 
 
 
