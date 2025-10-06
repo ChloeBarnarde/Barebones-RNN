@@ -121,8 +121,9 @@ int Matrix_DotProd(matrix* a, matrix* b) {
     // just gonna use naive implementation for now
     for (int i = 0; i < temp->size[0]; i++) {
         for (int j = 0; j < b->size[1]; j++) {
-            for (int p = 0; p < temp->size[1]; p++) {
-                a->values[CrToIdx(i, j, a)] += temp->values[CrToIdx(i, p, temp)] * b->values[CrToIdx(p, j, b)]; // need to double check this ig
+            a->values[CrToIdx(i, j, a)] = 0;
+            for (int p = 0; p < b->size[0]; p++) {
+                a->values[CrToIdx(i, j, a)] += (temp->values[CrToIdx(i, p, temp)] * b->values[CrToIdx(p, j, b)]); // need to double check this ig
             }
         }
     }
@@ -224,7 +225,7 @@ int Matrix_Transpose(matrix* a) {
 /* ===Misc=== */
 
 int Matrix_Copy(matrix* from, matrix* to) {
-    if (!CheckNull(from) || CheckNull(to))
+    if (!CheckNull(from) || !CheckNull(to))
         return EXIT_FAILURE;
     
     if (to->size[0] != from->size[0] || to->size[1] != from->size[1]) {
@@ -315,15 +316,8 @@ int Matrix_Printf(matrix *m, int decimalPlaces) {
                 maxValue = m->values[rowi * m->size[1] + coli];
         }
     }
-
-    int cellWidth = (round(log10(maxValue))) + 2 + decimalPlaces;
-
-    // for (int row = 0; row < m->size[0]; row++) {
-    //     for (int col = 0; col < m->size[1]; col++) {
-    //         printf("%-*.*f", cellWidth, decimalPlaces, m->values[col * m->size[1] + row]);
-    //     }
-    //     printf("\n");
-    // }
+    
+    int cellWidth = (round(log10(maxValue))) + 2 + decimalPlaces;    
 
     for (int rowi = 0; rowi < m->size[0]; rowi++) {    
         for (int coli = 0; coli < m->size[1]; coli++) {
