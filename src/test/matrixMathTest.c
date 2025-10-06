@@ -34,4 +34,8 @@ double Count() {
 int main() {
     matrix* m = Matrix_Initialize(2, 3, &Count);
     printf("print return: %d\n", Matrix_Print(m));
+    matrix* m2 = Matrix_InitializeVarArg(2, 2, 0, 1, 2, 3);
+    printf("print return: %d\n", Matrix_Print(m2));
+    Matrix_Free(m);
+    Matrix_Free(m2);
 }

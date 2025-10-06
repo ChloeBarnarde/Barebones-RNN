@@ -76,6 +76,30 @@ matrix* Matrix_Initialize(int rows, int cols, double (*fprt)()) {
     return m;
 }
 
+matrix* Matrix_InitializeVarArg(int rows, int cols, ...) {
+    va_list args;
+    va_start(args, cols);  
+    
+    matrix* m = (matrix*)malloc(sizeof(matrix));
+    // allocate memory
+    m->size = malloc(sizeof(int)*2);
+    m->values = malloc(sizeof(double)*rows*cols);
+    // set values
+    m->size[0] = rows;
+    m->size[1] = cols;
+
+    for (int rowi = 0; rowi < rows; rowi++)
+    {
+        for (int coli = 0; coli < cols; coli++)
+        {
+            m->values[rowi*cols+coli] = va_arg(args, int); 
+        }
+    }
+    va_end(args);
+
+    return m;
+}
+
 
 void Matrix_Free(matrix* m) {
     free(m->values);
