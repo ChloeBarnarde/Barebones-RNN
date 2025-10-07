@@ -116,8 +116,21 @@ int Matrix_DotProd(matrix* a, matrix* b) {
 
     matrix* temp = Matrix_Create(a->size[0], a->size[1]);
     Matrix_Copy(a, temp);
+    
+    //resize/reset values of a 
+    if (a->size[1] != b->size[1]) {
+        free(a->values);
+        a->values = malloc(a->size[0] * b->size[1] * sizeof(double));
+        for (int rowi = 0; rowi < a->size[0]; rowi++)
+        {
+            for (int coli = 0; coli < b->size[1]; coli++)
+            {
+                a->values[rowi*b->size[1]+coli] = 0; 
+            }
+        }
+    }
     a->size[1] = b->size[1];
-
+    
     // just gonna use naive implementation for now
     for (int i = 0; i < temp->size[0]; i++) {
         for (int j = 0; j < b->size[1]; j++) {
@@ -317,7 +330,7 @@ int Matrix_Printf(matrix *m, int decimalPlaces) {
         }
     }
     
-    int cellWidth = (round(log10(maxValue))) + 2 + decimalPlaces;    
+    int cellWidth = (ceil(log10(maxValue))) + 2 + decimalPlaces;    
 
     for (int rowi = 0; rowi < m->size[0]; rowi++) {    
         for (int coli = 0; coli < m->size[1]; coli++) {
