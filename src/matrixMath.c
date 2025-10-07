@@ -113,7 +113,7 @@ int Matrix_DotProd(matrix* a, matrix* b) {
         return EXIT_FAILURE;
 
     if (a->size[1] != b->size[0]) {
-        printf("Passed Matrices don't have sizes that can be multiplied together a: %d, %d\n", a->size[0], a->size[1]);
+        //printf("Passed Matrices don't have sizes that can be multiplied together a: %d, %d\n", a->size[0], a->size[1]);
         return EXIT_FAILURE;
     }
 

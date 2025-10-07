@@ -34,11 +34,18 @@ int DPH(matrix* m1,matrix* m2 ,matrix* m3, int i) {
     Matrix_Free(m3);
     return status;
 }
-
+int AH(matrix* m1, matrix* m2, matrix* m3, int i) {
+    Matrix_Add(m1, m2);
+    int status = Equal(m1, m3, "Correct Args", i);
+    Matrix_Free(m1);
+    Matrix_Free(m2);
+    Matrix_Free(m3);
+    return status;
+}
 void TestDotProd() {
     int testCount = 0;
     int testsPassed = 0;
-    printf("=== Dot Product Test ===\n");
+    printf("\n=== Dot Product Test ===\n");
 
     // test dot product with correct arguements
     testCount++;
@@ -75,14 +82,42 @@ void TestDotProd() {
     out = Matrix_DotProd(m1, NULL);
     testsPassed += Output(out == EXIT_FAILURE, "Null Test", 2);
      
+    testCount++;
+    out = Matrix_DotProd(NULL, m1);
+    testsPassed += Output(out == EXIT_FAILURE, "Null Test", 3);
 
+    testCount++;
+    m2 = malloc(sizeof(matrix));
+    out = Matrix_DotProd(m1, m2);
+    testsPassed += Output(out == EXIT_FAILURE, "Null", 4);
+
+    testCount++;
+    free(m1);
+    m1 = Matrix_Create(2, 3);
+    free(m2);
+    m2 = Matrix_Create(4, 5);
+    out = Matrix_DotProd(m1, m2); 
+    testsPassed += Output(out == EXIT_FAILURE, "Incorrect Arg", 1);
 
     // total tests passed
     printf("Tests Passed: %d/%d\n", testsPassed, testCount);
 }
 
 void TestAdd() {
+    printf("\n=== Addition Test ===\n");
+    int testCount = 0;
+    int testsPassed = 0;
 
+    testCount++;
+    c = 0;
+    matrix* m1 = Matrix_Initialize(2, 2, &Count);
+    c = 0;
+    matrix* m2 = Matrix_Initialize(2, 2, &Count);
+    matrix* m3 = Matrix_InitializeVarArg(2, 2, 0, 2, 4, 6);
+    testsPassed += AH(m1, m2, m3, 1);
+
+
+    printf("Tests Passed: %d/%d\n", testsPassed, testCount);
 }
 
 void  TestScaler() {
