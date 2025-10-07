@@ -1,4 +1,6 @@
 #include "../matrixMath.h"
+#include <stdlib.h>
+#include <stdio.h>
 #define ANSI_COLOR_RESET   "\x1b[0m"
 #define ANSI_COLOR_RED     "\x1b[31m"
 #define ANSI_COLOR_GREEN   "\x1b[32m"
@@ -9,51 +11,70 @@ double Count() {
     return c++;
 }
 
+int Output(int pass, char* test, int num) {
+    if (pass == 1) {
+       printf("%s Test %d: " ANSI_COLOR_GREEN" pass\n"ANSI_COLOR_RESET, test, num);
+       return 1;
+    } else {
+       printf("%s Test %d: " ANSI_COLOR_RED" fail\n"ANSI_COLOR_RESET, test, num);
+       return 0;
+    }
+}
+int Equal(matrix* m1, matrix* m2, char* test, int num) { 
+    int out = Matrix_Equals(m1, m2);
+    Output(out, test, num);
+    return out;
+}
+int DPH(matrix* m1,matrix* m2 ,matrix* m3, int i) {
+   
+    Matrix_DotProd(m1, m2);
+    int status = Equal(m1, m3, "Correct Args",i); 
+    Matrix_Free(m1);
+    Matrix_Free(m2);
+    Matrix_Free(m3);
+    return status;
+}
 
 void TestDotProd() {
     int testCount = 0;
     int testsPassed = 0;
     printf("=== Dot Product Test ===\n");
+
+    // test dot product with correct arguements
+    testCount++;
     c = 0;
     matrix* m1 = Matrix_Initialize(2, 3, &Count);
     c = 0;
     matrix* m2 = Matrix_Initialize(3, 2, &Count);    
-
-    // test dot product with correct arguements
-    testCount++;
-    int status = Matrix_DotProd(m1, m2); // should be 2x2 matrix 
     matrix* m3 = Matrix_InitializeVarArg(2, 2, 10, 13, 28, 40);
-    if (status == 0 && Matrix_Equals(m1, m3) == 1) {
-        testsPassed++;
-        printf("Correct Args Test 00:"ANSI_COLOR_GREEN" pass\n"ANSI_COLOR_RESET);
-    } else {
-        printf("Correct Args Test 00:"ANSI_COLOR_RED" fail\n"ANSI_COLOR_RESET);
-    }
-
-    Matrix_Free(m1);
-    Matrix_Free(m2);
-    Matrix_Free(m3);
-
+    testsPassed += DPH(m1, m2, m3, testCount);  
+    
     testCount++;
     c = 0;
     m1 = Matrix_Initialize(4, 2, &Count);
     c = 0;
     m2 = Matrix_Initialize(2, 4, &Count);    
     m3 = Matrix_InitializeVarArg(4, 4, 4, 5, 6, 7, 12, 17, 22, 27, 20, 29, 38, 47, 28, 41, 54, 67);
-    status = Matrix_DotProd(m1, m2);
-    if (status == 0 && Matrix_Equals(m1, m3) == 1) {
-        testsPassed++;
-        printf("Correct Args Test 01:"ANSI_COLOR_GREEN" pass\n"ANSI_COLOR_RESET);
-    } else {
-        printf("Correct Args Test 01:"ANSI_COLOR_RED" fail\n"ANSI_COLOR_RESET);
-    }
-   
-    Matrix_Free(m1);
-    Matrix_Free(m2);
-    Matrix_Free(m3);
+    testsPassed += DPH(m1, m2, m3, testCount); 
 
+    testCount++;
+    c = 0;
+    m1 = Matrix_Initialize(3, 3, &Count);
+    c = 0;
+    m2 = Matrix_Initialize(3, 4, &Count);    
+    m3 = Matrix_InitializeVarArg(3, 4, 20, 23, 26, 29, 56, 68, 80, 92, 92, 113, 134, 155);
+    testsPassed += DPH(m1, m2, m3, testCount);
 
     // test dot product with incorrect arguements
+    testCount++;
+    int out = Matrix_DotProd(NULL, NULL);
+    testsPassed += Output(out == EXIT_FAILURE, "Null Test", 1);
+    
+    testCount++;
+    m1 = malloc(sizeof(matrix));
+    out = Matrix_DotProd(m1, NULL);
+    testsPassed += Output(out == EXIT_FAILURE, "Null Test", 2);
+     
 
 
     // total tests passed
