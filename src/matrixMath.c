@@ -92,7 +92,7 @@ matrix* Matrix_InitializeVarArg(int rows, int cols, ...) {
     {
         for (int coli = 0; coli < cols; coli++)
         {
-            m->values[rowi*cols+coli] = va_arg(args, int); 
+            m->values[rowi*cols+coli] = va_arg(args, double);
         }
     }
     va_end(args);
@@ -268,9 +268,9 @@ matrix* Matrix_VectorRow(matrix* m, int row) {
     if (!CheckNull(m))
         return NULL;
     
-    if (m->size[0] >= row)
+    if (m->size[0] <= row)
         return NULL;
-    
+        
     matrix* new = Matrix_Create(1, m->size[1]);
 
     for (int i = 0; i < m->size[1]; i++)
@@ -285,14 +285,14 @@ matrix* Matrix_VectorCol(matrix* m, int col) {
     if (!CheckNull(m))
         return NULL;
     
-    if (m->size[1] >= col)
+    if (m->size[1] <= col)
         return NULL;
     
     matrix* new = Matrix_Create(m->size[0], 1);
 
     for (int i = 0; i < m->size[0]; i++)
     {
-        new->values[i] = m->values[i * m->size[1]];
+        new->values[i] = m->values[i * m->size[1] + col];
     }
     
     return new;
