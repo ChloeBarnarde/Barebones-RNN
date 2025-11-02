@@ -1,7 +1,14 @@
-#include "matrixMath.h"
+#include <stdio.h>
+#include <stdlib.h>
+
+struct test {
+    int i;
+};
 
 int main() {
-    matrix* m = Matrix_Create(2,2);
-    Matrix_Print(m);
-    return 0;
+    struct test* t = malloc(sizeof(struct test));
+
+    t->i = 1;
+    int i = t->i;
+    printf("%d\n", i);
 }

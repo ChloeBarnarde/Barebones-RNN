@@ -13,19 +13,22 @@
 #define SIGMOID(x)  (1 / (1 + (E^(-(x))))
 
 #include "matrixMath.h"
+#include <math.h>
 
 
+// one to many
 struct rnn {
     int inputSize;
     int outputSize;
     int hiddenSize;
-    // int seqLen;
+    int seqLen;
     double learningRate;
-    // weights input to hidden
+    // input size is 1 x input_size
+    // weights input to hidden size = input_size x hidden_size
     matrix* Wxh;
-    // weights hidden to hidden (matrix)
+    // weights hidden to hidden (matrix) size = hidden_size x hidden_size
     matrix* Whh;
-    // weights hidden to output (vector i think?)
+    // weights hidden to output (vector i think?) size = hidden_size x output_size
     matrix* Why;
     // bias hidden (matrix)
     matrix* bh;  
@@ -105,6 +108,32 @@ matrix* evaluate(rnn* r, double* x) {
     // return y
     
     return y;
+}
+
+
+int LossFunc(rnn* rnn, matrix* input, matrix* target) {
+    // using MSE
+    // L(\hat y, y) = \sum^{Y_y}_{t=1}L(\hat y_t, y_t)
+
+}
+
+double MSE_Loss(matrix* output, matrix* target) {
+    if (output->size[0] != target->size[0])
+        return -1.;
+    if (output->size[1] != target->size[1])
+        return -1.;
+    
+    double sum = 0;
+    for (int rowi = 0; rowi < output->size[0]; rowi++)
+    {
+        for (int coli = 0; coli < output->size[1]; coli++)
+        {
+            sum += pow(output->values[rowi*output->size[1]+coli] - target->values[rowi*output->size[1]+coli], 2);
+        }
+    }
+
+    sum /= output->size[0] * output->size[1];
+    return sum;
 }
 
 int TrainRNN(rnn* r, float* trainX[], float* trainY[]) {
