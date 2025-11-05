@@ -38,6 +38,19 @@ struct rnn {
     double (*activationFuncstions[2])(double);
 } typedef rnn;
 
+// return loss, dWxh, dWhh, dWhy, dbh, dby, hs[len(inputs)], ???
+struct gradient_info {
+    double loss;
+    // = Matricies =
+    matrix* dWxh;
+    matrix* dWhh;
+    matrix* dWhy;
+    // = Vectors =
+    matrix* dbh;
+    matrix* dby;
+    matrix* h;
+} typedef gradient_info;
+
 int step(rnn* r) {
 
 }
@@ -114,9 +127,7 @@ double mult(double a, double b) { return a * b; }
 double minusOne(double a) {return 1 - a; };
 
 // probably need a struct to store all data in for returning it
-int LossFunc(rnn* rnn, matrix* input, matrix* target, matrix* hprev) {
-    // using MSE
-    // L(\hat y, y) = \sum^{Y_y}_{t=1}L(\hat y_t, y_t)
+gradient_info* LossFunc(rnn* rnn, matrix* input, matrix* target, matrix* hprev) {
 
     // target and input is currently one hot encoded
 
@@ -291,10 +302,22 @@ int LossFunc(rnn* rnn, matrix* input, matrix* target, matrix* hprev) {
     Matrix_Free(hs);
     Matrix_Free(ps);
 
-    // return loss, dWxh, dWhh, dWhy, dbh, dby, hs[len(inputs)], ???
+    gradient_info* gi = malloc(sizeof(gradient_info));
+    gi->loss = loss;
+    gi->dWxh = dWxh;
+    gi->dWhh = dWhh;
+    gi->dWhy = dWhy;
+    gi->dbh = dbh;
+    gi->dby = dby;
+    gi->h = Matrix_VectorRow(hs, rnn->seqLen);
+    
+    return gi;
 }
 
 double MSE_Loss(matrix* output, matrix* target) {
+    // using MSE
+    // L(\hat y, y) = \sum^{Y_y}_{t=1}L(\hat y_t, y_t)
+
     if (output->size[0] != target->size[0])
         return -1.;
     if (output->size[1] != target->size[1])
