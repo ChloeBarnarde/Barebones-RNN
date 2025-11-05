@@ -113,27 +113,33 @@ matrix* evaluate(rnn* r, double* x) {
 double mult(double a, double b) { return a * b; }
 double minusOne(double a) {return 1 - a; };
 
-int LossFunc(rnn* rnn, matrix* input, matrix* target) {
+// probably need a struct to store all data in for returning it
+int LossFunc(rnn* rnn, matrix* input, matrix* target, matrix* hprev) {
     // using MSE
     // L(\hat y, y) = \sum^{Y_y}_{t=1}L(\hat y_t, y_t)
 
     // target and input is currently one hot encoded
 
-    matrix* hs;
-    matrix* ys;
-    matrix* ps;
+    matrix* hs = Matrix_Create(rnn->seqLen + 1, rnn->hiddenSize);
+    for (int coli = 0; coli < hs->size[1]; coli++)
+    {
+        Matrix_Set(hs, 0, coli, Matrix_Get(hprev, 0, coli));
+    }
+    
+    matrix* ys = Matrix_Create(rnn->seqLen, rnn->outputSize);
+    matrix* ps = Matrix_Create(rnn->seqLen, rnn->outputSize);
     float loss;
 
     for (int t = 0; t < rnn->seqLen; t++)
     {
         // matricies to free:
-        //  - Wxh
-        //  - Whh
-        //  - inputRowT
-        //  - hsRowTminusOne
-        //  - Why
-        //  - hsRowT
-        
+        //  - Wxh - done
+        //  - Whh- done
+        //  - inputRowT - done
+        //  - hsRowTminusOne - done
+        //  - Why - done
+        //  - hsRowT - done
+
         matrix* Wxh= Matrix_Create(rnn->Wxh->size[0], rnn->Wxh->size[1]);
         Matrix_Copy(rnn->Wxh, Wxh);
         matrix* Whh = Matrix_Create(rnn->Whh->size[0], rnn->Whh->size[1]);
@@ -145,20 +151,28 @@ int LossFunc(rnn* rnn, matrix* input, matrix* target) {
         // function: tanh(Wxh * xs[t] + Whh * hs[t-1] + bh)
         matrix* inputRowT = Matrix_VectorRow(input, t);
         Matrix_DotProd(Wxh, inputRowT);
-        matrix* hsRowTMinusOne = Matrix_VectorRow(hs, t-1);
+        Matrix_Free(inputRowT);
+
+        matrix* hsRowTMinusOne = Matrix_VectorRow(hs, t); // t = t-1 becauwse length = seqLen+1
         Matrix_DotProd(Whh, hsRowTMinusOne);
+        Matrix_Free(hsRowTMinusOne);
         Matrix_Add(Wxh, Whh);
+        Matrix_Free(Whh);
         Matrix_Add(Wxh, rnn->bh);
         for (int coli = 0; coli < hs->size[1]; coli++)
         {
-            Matrix_Set(hs, t, coli, tanh(Matrix_Get(Wxh, 0, coli)));
+            Matrix_Set(hs, t+1, coli, tanh(Matrix_Get(Wxh, 0, coli)));
         }
+        Matrix_Free(Wxh);
 
         //function: Why * hs[t] + by
         matrix* Why = Matrix_Create(rnn->Why->size[0], rnn->Why->size[1]);
-        matrix* hsRowT = Matrix_VectorRow(hs, t);
+        matrix* hsRowT = Matrix_VectorRow(hs, t+1);
         Matrix_DotProd(Why, hsRowT);
+        Matrix_Free(hsRowT);
         Matrix_Add(Why, rnn->by); // Why = ys
+        Matrix_Copy(Why, ys);
+        Matrix_Free(Why);
         
         // for probobilities
         double sum = 0;
@@ -183,27 +197,26 @@ int LossFunc(rnn* rnn, matrix* input, matrix* target) {
 
     // === gradient ===
     // gradient of matricies
-    matrix* dWxh;
-    matrix* dWhy;
-    matrix* dWhh;
+    matrix* dWxh = Matrix_create(rnn->Wxh->size[0], rnn->Wxh->size[1]);
+    matrix* dWhy = Matrix_create(rnn->Why->size[0], rnn->Why->size[1]);
+    matrix* dWhh = Matrix_create(rnn->Whh->size[0], rnn->Whh->size[1]);
     // gradient of vectors
-    matrix* dbh;
-    matrix* dby;
+    matrix* dbh = Matrix_create(rnn->bh->size[0], rnn->bh->size[1]);
+    matrix* dby = Matrix_create(rnn->by->size[0], rnn->by->size[1]);
     //gradietn of hidden vector
-    matrix* dhnext;
+    matrix* dhnext = Matrix_Create(1, rnn->hiddenSize);
 
     for (int t = rnn->seqLen - 1; t >= 0; t--)
     {
         // Matricies to free:
-        //  - dy
-        //  - dyCopy
-        //  - hsRowT
-        //  - dh
-        //  - hsRowT
-        //  - dhraw
-        //  - xsRowT
-        //  - hsRowTMinusOne
-        //  - Whh
+        //  - dy - done
+        //  - dyCopy - done
+        //  - hsRowT - done
+        //  - dh - done
+        //  - dhraw - done
+        //  - xsRowT - done
+        //  - hsRowTMinusOne - done
+        //  - Whh - done
         
         // dE/dy[j] = y[j] - t[j]
         matrix* dy = Matrix_VectorRow(ps, t);
@@ -219,10 +232,11 @@ int LossFunc(rnn* rnn, matrix* input, matrix* target) {
         // dE/dy[j]*dy[j]/dWhy[j,k] = dE/dy[j] * h[k]
         matrix* dyCopy = Matrix_Create(1, 1);
         Matrix_Copy(dy, dyCopy);
-        matrix* hsRowT = Matrix_VectorRow(hs, t);
+        matrix* hsRowT = Matrix_VectorRow(hs, t+1);
         Matrix_Transpose(hsRowT);
         Matrix_DotProd(dyCopy, hsRowT);
         Matrix_Add(dWhy, dyCopy);
+        Matrix_Free(dyCopy);
         Matrix_Add(dby, dy);
 
         //backprop into h
@@ -230,12 +244,14 @@ int LossFunc(rnn* rnn, matrix* input, matrix* target) {
         Matrix_Copy(rnn->Why, dh);
         Matrix_Transpose(dh);
         Matrix_DotProd(dh, dy);
+        Matrix_Free(dy);
         Matrix_Add(dh, dhnext);
         //backprop thourhg tanh
-        matrix* hsRowT = Matrix_VectorRow(hs, t);
+        matrix* hsRowT = Matrix_VectorRow(hs, t + 1);
         Matrix_ElementWiseFunc2M(hsRowT, hsRowT, mult);
         Matrix_ElementWiseFunc1M(hsRowT, minusOne);
         Matrix_ElementWiseFunc2M(hsRowT, dh, mult);
+        Matrix_Free(dh);
 
         Matrix_Add(dbh, hsRowT);
 
@@ -245,12 +261,15 @@ int LossFunc(rnn* rnn, matrix* input, matrix* target) {
         matrix * xsRowT = Matrix_VectorRow(input, t);
         Matrix_Transpose(xsRowT);
         Matrix_DotProd(dhraw, xsRowT);
+        Matrix_Free(xsRowT);
         Matrix_Add(dWxh, dhraw);
 
         Matrix_Copy(hsRowT, dhraw);
-        matrix* hsRowTMinusOne = Matrix_VectorRow(hs, t-1);
+
+        matrix* hsRowTMinusOne = Matrix_VectorRow(hs, t);
         Matrix_Transpose(hsRowTMinusOne);
         Matrix_DotProd(dhraw, hsRowTMinusOne);
+        Matrix_Free(hsRowTMinusOne);
         Matrix_Add(dWhh, dhraw);
 
         //dhnext
@@ -258,19 +277,21 @@ int LossFunc(rnn* rnn, matrix* input, matrix* target) {
         Matrix_Transpose(Whh);
         Matrix_Copy(rnn->Whh, Whh);
         Matrix_Copy(hsRowT, dhraw);
+        Matrix_Free(hsRowT);
         Matrix_DotProd(Whh, dhraw);
-        dhnext = Whh;
+        Matrix_Free(dhraw);
+        Matrix_Copy(Whh, dhnext);
+        Matrix_Free(Whh);
     }
 
     // gradient clipping
     // loop over all values of all gradients and clip between -5 and 5
 
+    // Freeing
+    Matrix_Free(hs);
+    Matrix_Free(ps);
 
-
-    // == Free everything ==
-    
-
-    // return loss, dWxh, dWhh, dWhy, dbh, dby, hs[len(inputs)-1], 
+    // return loss, dWxh, dWhh, dWhy, dbh, dby, hs[len(inputs)], ???
 }
 
 double MSE_Loss(matrix* output, matrix* target) {
