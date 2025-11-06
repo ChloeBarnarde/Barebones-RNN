@@ -1,3 +1,10 @@
+demo: matrixMath.o main.o
+	$(CC) main.o matrixMath.o -lm -o demo.out
+
+main.o: main.c
+	$(CC) -c src/main.c -o main.o
+
+main.c:
 
 # testing 
 test: test.o matrixMath.o 

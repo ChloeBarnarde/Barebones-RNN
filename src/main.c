@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
-#include <matrixMath.h>
+#include "matrixMath.h"
 
 struct list {
     char token;
@@ -117,5 +117,8 @@ int main() {
     //loop through again
 
 
+
+
+    printf("done\n");
 
 }
