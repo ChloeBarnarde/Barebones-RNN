@@ -107,7 +107,7 @@ gradient_info* LossFunc(rnn* rnn, matrix* input, matrix* target, matrix* hprev) 
         // want to find true label
         for (int coli = 0; coli < dy->size[1]; coli++)
         {
-            if (Matrix_Get(target, t, coli) != 1)
+            if (Matrix_Get(target, t, coli) != 1) // only want to update the actual labels
                 continue;
             Matrix_Set(dy, t, coli, Matrix_Get(dy, t, coli) - 1);
             break;
@@ -158,8 +158,9 @@ gradient_info* LossFunc(rnn* rnn, matrix* input, matrix* target, matrix* hprev) 
 
         //dhnext
         matrix* Whh = Matrix_Create(1 , 1);
-        Matrix_Transpose(Whh);
+        // Matrix_Copy(rnn->Whh, Whh);
         Matrix_Copy(rnn->Whh, Whh);
+        Matrix_Transpose(Whh);
         Matrix_Copy(hsRowT, dhraw);
         Matrix_Free(hsRowT);
         Matrix_DotProd(Whh, dhraw);

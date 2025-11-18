@@ -1,0 +1,40 @@
+import pandas as pd
+import numpy as np
+
+allTokens = {}
+
+df = pd.read_csv('data/TheExaminer_SpamClickbaitCatalog/examiner_date_tokens_short.csv', sep='|')
+
+def oneHotArrayToString(array):
+    s = ""
+    for i in range(len(array)):
+        s+=str(int(array[i]))
+    return s
+
+# go through values to add to dictionary
+for row in df["headline_tokens"]:
+    for ch in row:
+        if (ch in allTokens.keys()):
+            continue
+        allTokens[ch] = np.zeros(1) # placeholder value
+
+# get one hot encodings 
+i = 0;
+for ch in allTokens.keys():
+    allTokens[ch] = np.zeros(len(allTokens))
+    allTokens[ch][i] = 1
+    i+=1
+
+    
+f = open("data/TheExaminer_SpamClickbaitCatalog/examiner_date_tokens_short_onehot.csv", 'w')
+rowi = 0
+for row in df["headline_tokens"]:
+    for i in range(len(row)-1):
+        f.write('{0}|{1}\n'.format(oneHotArrayToString(allTokens[row[i]]), 
+                                   oneHotArrayToString(allTokens[row[i+1]])))
+    if rowi >= len(df['headline_tokens']):
+        continue # at the last row
+    f.write('{0}|{1}\n'.format(oneHotArrayToString(allTokens[row[len(row)-1]]), 
+                               oneHotArrayToString(allTokens[df['headline_tokens'][rowi][0]])))
+    rowi+=1
+f.close()
