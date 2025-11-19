@@ -27,14 +27,20 @@ for ch in allTokens.keys():
 
     
 f = open("data/TheExaminer_SpamClickbaitCatalog/examiner_date_tokens_short_onehot.csv", 'w')
+rows = df['headline_tokens'].count()
 rowi = 0
 for row in df["headline_tokens"]:
     for i in range(len(row)-1):
-        f.write('{0}|{1}\n'.format(oneHotArrayToString(allTokens[row[i]]), 
+        f.write('{0}|{1}'.format(oneHotArrayToString(allTokens[row[i]]), 
                                    oneHotArrayToString(allTokens[row[i+1]])))
-    if rowi >= len(df['headline_tokens']):
+        if (i < len(row)-2):
+            f.write('\n')
+    if rowi >= len(df['headline_tokens'])-1:
         continue # at the last row
+    f.write('\n')
     f.write('{0}|{1}\n'.format(oneHotArrayToString(allTokens[row[len(row)-1]]), 
                                oneHotArrayToString(allTokens[df['headline_tokens'][rowi][0]])))
     rowi+=1
+    print(f"[{u'█'*round((rowi/rows)*60)}{'.'*(round(((rows-rowi)/rows)*60))}]", end='\r', flush=True)
+print('')
 f.close()
