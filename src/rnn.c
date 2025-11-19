@@ -1,3 +1,4 @@
+#include <math.h>
 #include "rnn.h"
 
 gradient_info* LossFunc(rnn* rnn, matrix* input, matrix* target, matrix* hprev) {
@@ -190,5 +191,16 @@ gradient_info* LossFunc(rnn* rnn, matrix* input, matrix* target, matrix* hprev) 
 
 
 int TrainRNN(rnn* r, training_data* epoch) {
-    
+    // checks
+    if (epoch->input->size[0] != epoch->output->size[0]) {
+        return EXIT_FAILURE;
+    }
+    if (r->inputSize != epoch->input->size[1]) {
+        return EXIT_FAILURE;
+    }
+    if (r->outputSize != epoch->output->size[1]) {
+        return EXIT_FAILURE;
+    }
+
+    int batch_size = epoch->input->size[0] / epoch->iterations;
 }

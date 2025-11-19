@@ -32,6 +32,7 @@ int main() {
     int one_hot_size = -1;
     int dataset_size = 0;
 
+    // only for linux :p
     if (access(fileName, F_OK) != 0) {
         // file doesn't exist;
         printf("Formatted data file hasn't been created yet, creating it now\n");

@@ -40,8 +40,8 @@ struct rnn {
 
 // epoch
 struct training_data {
-    matrix* input;
-    matrix* output;
+    matrix* input; // X
+    matrix* output; // Y
     int iterations;
 } typedef training_data;
 
