@@ -77,19 +77,19 @@ gradient_info* LossFunc(rnn* rnn, matrix* input, matrix* target, matrix* hprev) 
         // softmax loss
         for (int coli = 0; coli < ps->size[1]; coli++)
         {
-            loss -= Matrix_Get(target, t, coli) * log(Matrix_get(ps, t, coli)); 
+            loss -= Matrix_Get(target, t, coli) * log(Matrix_Get(ps, t, coli)); 
         }
     }
 
 
     // === gradient ===
     // gradient of matrices
-    matrix* dWxh = Matrix_create(rnn->Wxh->size[0], rnn->Wxh->size[1]);
-    matrix* dWhy = Matrix_create(rnn->Why->size[0], rnn->Why->size[1]);
-    matrix* dWhh = Matrix_create(rnn->Whh->size[0], rnn->Whh->size[1]);
+    matrix* dWxh = Matrix_Create(rnn->Wxh->size[0], rnn->Wxh->size[1]);
+    matrix* dWhy = Matrix_Create(rnn->Why->size[0], rnn->Why->size[1]);
+    matrix* dWhh = Matrix_Create(rnn->Whh->size[0], rnn->Whh->size[1]);
     // gradient of vectors
-    matrix* dbh = Matrix_create(rnn->bh->size[0], rnn->bh->size[1]);
-    matrix* dby = Matrix_create(rnn->by->size[0], rnn->by->size[1]);
+    matrix* dbh = Matrix_Create(rnn->bh->size[0], rnn->bh->size[1]);
+    matrix* dby = Matrix_Create(rnn->by->size[0], rnn->by->size[1]);
     //gradietn of hidden vector
     matrix* dhnext = Matrix_Create(1, rnn->hiddenSize);
 
@@ -125,6 +125,7 @@ gradient_info* LossFunc(rnn* rnn, matrix* input, matrix* target, matrix* hprev) 
         Matrix_Add(dWhy, dyCopy);
         Matrix_Free(dyCopy);
         Matrix_Add(dby, dy);
+        Matrix_Free(hsRowT);
 
         //backprop into h
         matrix* dh = Matrix_Create(1, 1);
@@ -134,9 +135,9 @@ gradient_info* LossFunc(rnn* rnn, matrix* input, matrix* target, matrix* hprev) 
         Matrix_Free(dy);
         Matrix_Add(dh, dhnext);
         //backprop thourhg tanh
-        matrix* hsRowT = Matrix_VectorRow(hs, t + 1);
+        hsRowT = Matrix_VectorRow(hs, t + 1);
         Matrix_ElementWiseFunc2M(hsRowT, hsRowT, mult);
-        Matrix_ElementWiseFunc1M(hsRowT, minusOne);
+        Matrix_ElemetWiseFunc1M(hsRowT, minusOne);
         Matrix_ElementWiseFunc2M(hsRowT, dh, mult);
         Matrix_Free(dh);
 
@@ -261,7 +262,7 @@ int TrainRNN(rnn* r, training_data* epoch) {
             // reduce batch size
             batch_size = epoch->input->size[0] - batch_position;
         }
-
+        r->seqLen=batch_size;
         // need to reset the num of rows cause of the if above
         Xsub->size[0] = batch_size;
         Ysub->size[0] = batch_size;
@@ -296,4 +297,29 @@ int TrainRNN(rnn* r, training_data* epoch) {
 
     Matrix_Free(hprev);
 
+}
+
+double SampleNormalDistribution() {
+    double u1 = 0;
+    while (u1 == 0) {
+        u1 = (double)rand() / RAND_MAX;
+    }
+    double u2 = (double)rand() / RAND_MAX;
+    const double TOW_PI = 2. * M_PI;
+    
+    double mag = sqrt(-2. * log(u1));
+    double z1 = cos(TOW_PI * u2);
+    // double z2 = cos(TOW_PI * u2);
+
+    return z1;
+}
+
+int InitializeWeights(rnn* r) {
+    r->Wxh = Matrix_Initialize(r->hiddenSize, r->inputSize, &SampleNormalDistribution);
+    r->Whh = Matrix_Initialize(r->hiddenSize, r->hiddenSize, &SampleNormalDistribution);
+    r->Why = Matrix_Initialize(r->outputSize, r->hiddenSize, &SampleNormalDistribution);
+    r->by = Matrix_Initialize(r->outputSize, 1, &SampleNormalDistribution);
+    r->bh = Matrix_Initialize(r->hiddenSize, 1, &SampleNormalDistribution);
+
+    return EXIT_SUCCESS;
 }

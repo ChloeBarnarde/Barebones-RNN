@@ -75,12 +75,13 @@ matrix* evaluate(rnn* r, double* x) {
     matrix* h = (matrix*)malloc(sizeof(matrix));
     h->size[0] = r->hiddenSize;
     h->size[1] = 1;
+    Matrix_Free(h0);
 
 
     // assuming we have all the values set up
     matrix* input = Matrix_Create(1, r->inputSize);
     input->values = x;
-    matrix* h0 = Matrix_Initialize(r->hiddenSize, r->outputSize, &one); // hidden state at timestep 0 with all 1's, should probably be random lol
+    h0 = Matrix_Initialize(r->hiddenSize, r->outputSize, &one); // hidden state at timestep 0 with all 1's, should probably be random lol
     // hidden layers
     // assuming dot product works
     matrix* result1= Matrix_Create(2, 2);// set sizes correctly
@@ -107,7 +108,7 @@ matrix* evaluate(rnn* r, double* x) {
 
     // before applying activation function
     matrix* a = (matrix*)malloc(sizeof(matrix));
-    MAdd(r->Whh, h0, a);
+    Matrix_Add(r->Whh, h0);
     // apply activation function
     // loop with for loop
     // find y
@@ -155,10 +156,14 @@ double MSE_Loss(matrix* output, matrix* target) {
 
 int TrainRNN(rnn* r, training_data* epoch);
 
+/// @brief Initailize all the weights in the struct to sample from a normal distribution
+/// @param r the rnn to initalize the weights in
+/// @return exit status
+int InitializeWeights(rnn* r);
+
+
 int TestRNN(rnn* r, float* testX[], float* testY[]) {
 
 }
-
-// want to be adjust features/data to train model better :p
 
 #endif
