@@ -4,6 +4,7 @@
 #include <string.h>
 #include <unistd.h>
 #include "matrixMath.h"
+#include "rnn.h"
 
 double* GetValuesFromString(char* str, int len) {
     double* values = malloc(sizeof(double) * len);
@@ -65,8 +66,8 @@ int main() {
     printf("Starting on allocating matrix\n");
     // x size of n-1 x char_types size
     // y size of n-1 x char_types size
-    matrix* X = Matrix_Create(dataset_size-1, one_hot_size);
-    matrix* Y = Matrix_Create(dataset_size-1, one_hot_size);
+    matrix* X = Matrix_Create(one_hot_size, dataset_size-1);
+    matrix* Y = Matrix_Create(one_hot_size, dataset_size-1);
     double* values;
     int i = 0;
     fp = fopen(fileName, "r");
@@ -81,7 +82,7 @@ int main() {
         values = GetValuesFromString(token, one_hot_size);
         for (int j = 0; j < one_hot_size; j++)
         {
-            Matrix_Set(X, i, j, values[j]);
+            Matrix_Set(X, j, i, values[j]);
         }
         
         token = strtok(NULL, "|");
@@ -89,7 +90,7 @@ int main() {
         values = GetValuesFromString(token, one_hot_size);
         for (int j = 0; j < one_hot_size; j++)
         {
-            Matrix_Set(Y, i, j, values[j]);
+            Matrix_Set(Y, j, i, values[j]);
         }
 
         free(values);
@@ -97,7 +98,22 @@ int main() {
     }
 
     printf("done assign values to X and Y matricies\n");
+    rnn* r = malloc(sizeof(rnn));
+    r->inputSize = X->size[1];
+    r->hiddenSize = 100;
+    r->outputSize = Y->size[1];
+    InitializeWeights(r);
 
+    training_data* epoch = malloc(sizeof(epoch));
+    epoch->iterations = limit/100;
+    epoch->input = X;
+    epoch->output = Y;
+
+    TrainRNN(r, epoch);
+
+
+    FreeWeights(r);
+    free(r);
     Matrix_Free(X);
     Matrix_Free(Y);
 

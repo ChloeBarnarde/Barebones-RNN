@@ -161,6 +161,10 @@ int TrainRNN(rnn* r, training_data* epoch);
 /// @return exit status
 int InitializeWeights(rnn* r);
 
+/// @brief Free's all the weight matrices
+/// @param r the rnn to free the matrices from 
+/// @return the exit status
+int FreeWeights(rnn* r);
 
 int TestRNN(rnn* r, float* testX[], float* testY[]) {
 
