@@ -1,5 +1,7 @@
 #include <math.h>
 #include "rnn.h"
+// a lot of this code takes insporation from Andrej Karpathy's blog https://karpathy.github.io/2015/05/21/rnn-effectiveness/
+// in a lot of cases it is a c implementation of the minimal character-level RNN language model in Python/numpy which he made.
 
 gradient_info* LossFunc(rnn* rnn, matrix* input, matrix* target, matrix* hprev) {
 
@@ -17,7 +19,7 @@ gradient_info* LossFunc(rnn* rnn, matrix* input, matrix* target, matrix* hprev) 
 
     for (int t = 0; t < rnn->seqLen; t++)
     {
-        // matricies to free:
+        // matrices to free:
         //  - Wxh - done
         //  - Whh- done
         //  - inputRowT - done
@@ -81,7 +83,7 @@ gradient_info* LossFunc(rnn* rnn, matrix* input, matrix* target, matrix* hprev) 
 
 
     // === gradient ===
-    // gradient of matricies
+    // gradient of matrices
     matrix* dWxh = Matrix_create(rnn->Wxh->size[0], rnn->Wxh->size[1]);
     matrix* dWhy = Matrix_create(rnn->Why->size[0], rnn->Why->size[1]);
     matrix* dWhh = Matrix_create(rnn->Whh->size[0], rnn->Whh->size[1]);
@@ -93,7 +95,7 @@ gradient_info* LossFunc(rnn* rnn, matrix* input, matrix* target, matrix* hprev) 
 
     for (int t = rnn->seqLen - 1; t >= 0; t--)
     {
-        // Matricies to free:
+        // matrices to free:
         //  - dy - done
         //  - dyCopy - done
         //  - hsRowT - done
@@ -177,6 +179,7 @@ gradient_info* LossFunc(rnn* rnn, matrix* input, matrix* target, matrix* hprev) 
     Matrix_Free(hs);
     Matrix_Free(ps);
 
+    // might want to change this to an out variable instead?
     gradient_info* gi = malloc(sizeof(gradient_info));
     gi->loss = loss;
     gi->dWxh = dWxh;
@@ -189,6 +192,35 @@ gradient_info* LossFunc(rnn* rnn, matrix* input, matrix* target, matrix* hprev) 
     return gi;
 }
 
+double AddTiny(double a) {
+    return a + 1e-8;
+}
+double Sqrt(double a) {
+    return sqrt(a);
+}
+double Divide(double a, double b) {
+    return a/b;
+}
+
+int ApplyAdagrad(matrix* parameter, matrix* dparameter, matrix* memParameter, double learningRate) {
+    //updating values with adagrad
+    matrix* copy = Matrix_Create(1, 1);
+    matrix* memCopy = Matrix_Create(1, 1);
+    Matrix_Copy(dparameter, copy);
+    Matrix_DotProd(copy, copy);
+    Matrix_Add(memParameter, copy);
+    Matrix_Copy(dparameter, copy);
+    // param += -learning_rate * dparam / np.sqrt(mem + 1e-8) # adagrad update
+    Matrix_Copy(memParameter, memCopy);
+    Matrix_ElemetWiseFunc1M(memCopy, &AddTiny);
+    Matrix_ElemetWiseFunc1M(memCopy, &Sqrt); // could potentially just use the math library function instead??
+    Matrix_Scaler(copy, -learningRate);
+    Matrix_ElementWiseFunc2M(copy, memCopy, &Divide);
+    Matrix_Add(parameter, copy);
+    
+    Matrix_Free(copy);
+    Matrix_Free(memCopy);
+}
 
 int TrainRNN(rnn* r, training_data* epoch) {
     // checks
@@ -202,5 +234,66 @@ int TrainRNN(rnn* r, training_data* epoch) {
         return EXIT_FAILURE;
     }
 
-    int batch_size = epoch->input->size[0] / epoch->iterations;
+    int batch_size = (int)round(((float)epoch->input->size[0]) / epoch->iterations);
+    int batch_position = 0;
+
+    // memory matrices for adagrad
+    matrix* mWxh = Matrix_Create(r->Wxh->size[0], r->Wxh->size[1]);
+    matrix* mWhh = Matrix_Create(r->Whh->size[0], r->Whh->size[1]);
+    matrix* mWhy = Matrix_Create(r->Why->size[0], r->Why->size[1]);
+    
+    matrix* mbh = Matrix_Create(r->bh->size[0], r->bh->size[1]);
+    matrix* mby = Matrix_Create(r->by->size[0], r->by->size[1]);
+    
+
+    // sub matrices of the epoch's input/output matrices
+    matrix* Xsub = malloc(sizeof(matrix));
+    Xsub->size = malloc(sizeof(int) * 2);
+    Xsub->size[1] = epoch->input->size[1];
+    matrix* Ysub = malloc(sizeof(matrix));
+    Ysub->size = malloc(sizeof(int) * 2);
+    Ysub->size[1] = epoch->output->size[1];
+
+    matrix* hprev = Matrix_Create(1, r->hiddenSize);
+
+    while (batch_position < epoch->input->size[0]) {
+        if (batch_position + batch_position > epoch->input->size[0]) {
+            // reduce batch size
+            batch_size = epoch->input->size[0] - batch_position;
+        }
+
+        // need to reset the num of rows cause of the if above
+        Xsub->size[0] = batch_size;
+        Ysub->size[0] = batch_size;
+        Xsub->values = &epoch->input->values[batch_position];
+        Ysub->values = &epoch->output->values[batch_position];
+        // do the actual training
+        gradient_info* gi = LossFunc(r, Xsub, Ysub, hprev);
+        
+        // update parameters
+        ApplyAdagrad(r->Wxh, gi->dWxh, mWxh, r->learningRate);
+        ApplyAdagrad(r->Whh, gi->dWhh, mWhh, r->learningRate);
+        ApplyAdagrad(r->Why, gi->dWhy, mWhy, r->learningRate);
+        ApplyAdagrad(r->by, gi->dby, mby, r->learningRate);
+        ApplyAdagrad(r->bh, gi->dbh, mbh, r->learningRate);
+
+
+        batch_position += batch_size;
+    }
+
+    // manually free matrix
+    free(Xsub->size);
+    free(Xsub);
+    free(Ysub->size);
+    free(Ysub);
+
+    Matrix_Free(mWxh);
+    Matrix_Free(mWhh);
+    Matrix_Free(mWhy);
+    Matrix_Free(mby);
+    Matrix_Free(mbh);
+
+
+    Matrix_Free(hprev);
+
 }

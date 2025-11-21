@@ -16,14 +16,13 @@
 #include <math.h>
 
 
-// one to many
+// one to many?
 struct rnn {
     int inputSize;
     int outputSize;
     int hiddenSize;
     int seqLen;
     double learningRate;
-    // input size is 1 x input_size
     // weights input to hidden size = input_size x hidden_size
     matrix* Wxh;
     // weights hidden to hidden (matrix) size = hidden_size x hidden_size
@@ -47,7 +46,7 @@ struct training_data {
 
 struct gradient_info {
     double loss;
-    // = Matricies =
+    // = matrices =
     matrix* dWxh;
     matrix* dWhh;
     matrix* dWhy;
