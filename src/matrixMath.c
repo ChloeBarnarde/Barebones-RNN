@@ -317,6 +317,25 @@ int Matrix_Equals(matrix* a, matrix* b) {
     return true;
 }
 
+matrix* Matrix_SubMatrix(matrix* m, int rowStart, int rowEnd, int colStart, int colEnd) {
+    // checks
+    if (m == NULL) return NULL;
+    if (rowStart < 0 || colStart < 0) return NULL;
+    if (rowEnd >= m->size[0]) return NULL;
+    if (colEnd >= m->size[1]) return NULL;
+
+    matrix* sm = Matrix_Create(rowEnd-rowStart, colEnd-colStart);
+    
+    for (int rowi = rowStart; rowi < rowEnd; rowi++)
+    {
+        for (int coli = colStart; coli < colEnd; coli++) {
+            sm->values[(rowi-rowStart) * (colEnd-colStart) + (coli-colStart)] = m->values[rowi * m->size[1] + coli];
+        }
+    }
+
+    return sm;
+}
+
 /* ===Printing=== */
 
 int Matrix_Printf(matrix *m, int decimalPlaces) {

@@ -116,6 +116,14 @@ matrix* Matrix_VectorCol(matrix* m, int col);
 /// @return new matrix. Returns null if error encountered.
 matrix* Matrix_VectorRow(matrix* m, int row);
 
+/// @brief get a sub matrix. The matrix values will have their own space in memory
+/// @param m matrix to referece and get the sub matrix FROM
+/// @param rowStart the row to start, inclusive
+/// @param rowEnd the row to end, exclusive
+/// @param colStart the col to start, inclusive
+/// @param colEnd the col to end, exclusive
+/// @return returns a new matrix with the values from the specified chunk of the orignal, if error, it will return a null pointer
+matrix* Matrix_SubMatrix(matrix* m, int rowStart, int rowEnd, int colStart, int colEnd);
 
 /// @brief compare matrix values to see if they're equal
 /// @param a first matrix
