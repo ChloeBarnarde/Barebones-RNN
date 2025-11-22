@@ -61,6 +61,8 @@ struct gradient_info {
 //     return 1;
 // }
 // // one to one
+
+matrix* evaluate(rnn* r);
 // matrix* evaluate(rnn* r, double* x) {
 //     //find h
 //     // need to step backwards through time (onlt need if you have multiple time steps)

@@ -29,7 +29,8 @@ int main() {
     char* token;
 
     char* fileName = "data/TheExaminer_SpamClickbaitCatalog/examiner_date_tokens_short_onehot.csv";
-    
+    char* onehotFileName = "data/TheExaminer_SpamClickbaitCatalog/oneHotRep.csv";
+
     int one_hot_size = -1;
     int dataset_size = 0;
 
@@ -62,6 +63,18 @@ int main() {
     }
     fclose(fp);
     printf("Dataset size: %d\n", dataset_size);
+
+
+    char ixToChar[one_hot_size];
+    fp = fopen(onehotFileName, "r");
+    int i = 0;
+    while(fgets(row, 200, fp)) {
+        char* token = strtok(row, ",");
+        ixToChar[i] = token[0];
+        i++;
+    }
+    fclose(fp);
+
     
     printf("Starting on allocating matrix\n");
     // x size of n-1 x char_types size
@@ -69,7 +82,7 @@ int main() {
     matrix* X = Matrix_Create(one_hot_size, dataset_size-1);
     matrix* Y = Matrix_Create(one_hot_size, dataset_size-1);
     double* values;
-    int i = 0;
+    i = 0;
     fp = fopen(fileName, "r");
     // populate X and Y matricies
     while(fgets(row, 200, fp)) {
@@ -102,6 +115,7 @@ int main() {
     r->inputSize = X->size[0];
     r->hiddenSize = 100;
     r->outputSize = Y->size[0];
+    r->learningRate = 1e-1;
     InitializeWeights(r);
 
     training_data* epoch = malloc(sizeof(epoch));
@@ -111,9 +125,29 @@ int main() {
 
     printf("training started\n");
     int result = TrainRNN(r, epoch);
+    result = TrainRNN(r, epoch);
+    result = TrainRNN(r, epoch);
+    result = TrainRNN(r, epoch);
+    result = TrainRNN(r, epoch);
+    result = TrainRNN(r, epoch);
+    result = TrainRNN(r, epoch);
+    result = TrainRNN(r, epoch);
+    result = TrainRNN(r, epoch);
+    result = TrainRNN(r, epoch);
+    result = TrainRNN(r, epoch);
+    result = TrainRNN(r, epoch);
+    result = TrainRNN(r, epoch);
     printf("training finished: %d\n", result);
 
-
+    matrix* results = evaluate(r);
+    // convert results to string
+    for (int i = 0; i < results->size[0]; i++)
+    {
+        printf("%c", ixToChar[(int)Matrix_Get(results, i, 0)]);
+    }
+    printf("\n");
+    
+    
     FreeWeights(r);
     free(r);
     Matrix_Free(X);

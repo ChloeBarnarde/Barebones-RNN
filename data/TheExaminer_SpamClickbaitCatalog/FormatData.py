@@ -25,7 +25,13 @@ for ch in allTokens.keys():
     allTokens[ch][i] = 1
     i+=1
 
-    
+with open("data/TheExaminer_SpamClickbaitCatalog/oneHotRep.csv", mode='w', newline='') as file:
+    for ch in allTokens.keys():
+        file.write(ch)
+        file.write(",")
+        file.write(oneHotArrayToString(allTokens[ch]))
+        file.write("\n")
+
 f = open("data/TheExaminer_SpamClickbaitCatalog/examiner_date_tokens_short_onehot.csv", 'w')
 rows = df['headline_tokens'].count()
 rowi = 0
