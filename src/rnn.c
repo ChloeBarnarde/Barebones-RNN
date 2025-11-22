@@ -3,6 +3,9 @@
 // a lot of this code takes insporation from Andrej Karpathy's blog https://karpathy.github.io/2015/05/21/rnn-effectiveness/
 // in a lot of cases it is a c implementation of the minimal character-level RNN language model in Python/numpy which he made.
 
+double mult(double a, double b) { return a * b; }
+double minusOne(double a) {return 1 - a; }
+
 gradient_info* LossFunc(rnn* rnn, matrix* input, matrix* target, matrix* hprev) {
 
     // target and input is currently one hot encoded
@@ -10,15 +13,21 @@ gradient_info* LossFunc(rnn* rnn, matrix* input, matrix* target, matrix* hprev) 
     matrix* hs = Matrix_Create(rnn->hiddenSize, rnn->seqLen + 1);
     for (int rowi = 0; rowi < hs->size[0]; rowi++)
     {
-        Matrix_Set(hs, rowi, 0, Matrix_Get(hprev, rowi, 0));
+        // printf("getting matrix hprev\n");
+        int result = Matrix_Set(hs, rowi, 0, Matrix_Get(hprev, rowi, 0));
+        if (result == EXIT_FAILURE) {
+            printf("Issue with hprev get\n");
+        }
     }
 
+    printf("setting ys and ps\n");
     matrix* ys = Matrix_Create(rnn->outputSize, rnn->seqLen);
     matrix* ps = Matrix_Create(rnn->outputSize, rnn->seqLen);
-    float loss;
-
+    double loss;
+    
     for (int t = 0; t < rnn->seqLen; t++)
     {
+        // printf("sequence: %d\n", t);
         // matrices to free:
         //  - Wxh - done
         //  - Whh- done
@@ -26,20 +35,22 @@ gradient_info* LossFunc(rnn* rnn, matrix* input, matrix* target, matrix* hprev) 
         //  - hsRowTminusOne - done
         //  - Why - done
         //  - hsRowT - done
-
+        
         matrix* Wxh= Matrix_Create(rnn->Wxh->size[0], rnn->Wxh->size[1]);
         Matrix_Copy(rnn->Wxh, Wxh);
         matrix* Whh = Matrix_Create(rnn->Whh->size[0], rnn->Whh->size[1]);
         Matrix_Copy(rnn->Whh, Whh);
-
-
+        
+        
         // evaluating 
-
+        
         // function: tanh(Wxh * xs[t] + Whh * hs[t-1] + bh)
+        // printf("asdfasdfasdf\n");
         matrix* inputRowT = Matrix_VectorCol(input, t);
         Matrix_DotProd(Wxh, inputRowT);
         Matrix_Free(inputRowT);
-
+        
+        // printf("asdfasdfasdf\n");
         matrix* hsRowTMinusOne = Matrix_VectorCol(hs, t); // t = t-1 becauwse length = seqLen+1
         Matrix_DotProd(Whh, hsRowTMinusOne);
         Matrix_Free(hsRowTMinusOne);
@@ -48,6 +59,7 @@ gradient_info* LossFunc(rnn* rnn, matrix* input, matrix* target, matrix* hprev) 
         Matrix_Add(Wxh, rnn->bh);
         for (int rowi = 0; rowi < hs->size[0]; rowi++)
         {
+            // printf("setting values\n");
             Matrix_Set(hs, rowi, t+1, tanh(Matrix_Get(Wxh, rowi, 0)));
         }
         Matrix_Free(Wxh);
@@ -58,29 +70,47 @@ gradient_info* LossFunc(rnn* rnn, matrix* input, matrix* target, matrix* hprev) 
         Matrix_DotProd(Why, hsRowT);
         Matrix_Free(hsRowT);
         Matrix_Add(Why, rnn->by); // Why = ys
-        Matrix_Copy(Why, ys);
+        // fix here. set col t of ys to why.
+        //  i.e. ys[t] = Why
+        for (int rowi = 0; rowi < Why->size[0]; rowi++)
+        {
+            Matrix_Set(ys, rowi, t, Matrix_Get(Why, rowi, 0));
+        }
+        // Matrix_Copy(Why, ys);
         Matrix_Free(Why);
         
         // for probobilities
         double sum = 0;
         for (int rowi = 0; rowi < ys->size[0]; rowi++)
         {
+            // printf("current y: %lf\n", Matrix_Get(ys, rowi, t));
             Matrix_Set(ys, rowi, t, exp(Matrix_Get(ys, rowi, t)));
+            // printf("updated y: %lf\n", Matrix_Get(ys, rowi, t));
             sum += Matrix_Get(ys, rowi, t);
         }
-
+        // printf("%lf\n", sum);
+        
         for (int rowi = 0; rowi < ps->size[0]; rowi++)
         {
-            Matrix_Set(ps, rowi, 0, Matrix_Get(ys, rowi, t) / sum);
+            Matrix_Set(ps, rowi, t, Matrix_Get(ys, rowi, t) / sum);
+            // if (Matrix_Get(ps, rowi, t) == 0) {
+            //     printf("ps contains a zero\n");
+            // }
         }
-
         // softmax loss
         for (int rowi = 0; rowi < ps->size[0]; rowi++)
         {
+            if (Matrix_Get(ps, rowi, t) == 0) {
+                // printf("zerooo\n");
+            }
             loss -= Matrix_Get(target, rowi, t) * log(Matrix_Get(ps, rowi, t)); 
         }
+        // printf("%lf\n", loss);
+        int n;
+        // scanf("%d", &n);
     }
 
+    printf("finished eval\n");
 
     // === gradient ===
     // gradient of matrices
@@ -93,8 +123,10 @@ gradient_info* LossFunc(rnn* rnn, matrix* input, matrix* target, matrix* hprev) 
     //gradietn of hidden vector
     matrix* dhnext = Matrix_Create(rnn->hiddenSize, 1);
 
+    printf("start gd\n");
     for (int t = rnn->seqLen - 1; t >= 0; t--)
     {
+        // printf("gradient: %d\n", t);
         // matrices to free:
         //  - dy - done
         //  - dyCopy - done
@@ -114,7 +146,8 @@ gradient_info* LossFunc(rnn* rnn, matrix* input, matrix* target, matrix* hprev) 
                 // only want to update the actual labels
                 continue;
             }
-            Matrix_Set(dy, rowi, t, Matrix_Get(dy, rowi, t) - 1);
+            // printf("setting values\n");
+            Matrix_Set(dy, rowi, 0, Matrix_Get(dy, rowi, 0) - 1);
             break;
         }
         
@@ -174,24 +207,28 @@ gradient_info* LossFunc(rnn* rnn, matrix* input, matrix* target, matrix* hprev) 
         Matrix_Copy(Whh, dhnext);
         Matrix_Free(Whh);
     }
+    printf("finished gd\n");
 
     // gradient clipping
     // loop over all values of all gradients and clip between -5 and 5
 
     // Freeing
-    Matrix_Free(hs);
     Matrix_Free(ps);
-
+    
     // might want to change this to an out variable instead?
     gradient_info* gi = malloc(sizeof(gradient_info));
     gi->loss = loss;
+    // printf("Loss: %lf", gi->loss);
     gi->dWxh = dWxh;
     gi->dWhh = dWhh;
     gi->dWhy = dWhy;
     gi->dbh = dbh;
     gi->dby = dby;
-    gi->h = Matrix_VectorCol(hs, rnn->seqLen);
-
+    printf("asdfasdfasdf\n");
+    gi->h = Matrix_VectorCol(hs, rnn->seqLen-1);
+    printf("asdfasdfasdf\n");
+    Matrix_Free(hs);
+    
     return gi;
 }
 
@@ -228,12 +265,16 @@ int ApplyAdagrad(matrix* parameter, matrix* dparameter, matrix* memParameter, do
 int TrainRNN(rnn* r, training_data* epoch) {
     // checks
     if (epoch->input->size[1] != epoch->output->size[1]) {
+        printf("input cols and output cols don't match\n");
         return EXIT_FAILURE;
     }
     if (r->inputSize != epoch->input->size[0]) {
+        printf("epoch input size and input size don't match\n");
+        printf("epoch: %d, r-inputsize: %d\n", epoch->input->size[0], r->inputSize);
         return EXIT_FAILURE;
     }
     if (r->outputSize != epoch->output->size[0]) {
+        printf("output epoch issues\n");
         return EXIT_FAILURE;
     }
 
@@ -254,19 +295,23 @@ int TrainRNN(rnn* r, training_data* epoch) {
     matrix* Xsub;
     matrix* Ysub;
 
-    matrix* hprev = Matrix_Create(1, r->hiddenSize);
+    matrix* hprev = Matrix_Create(r->hiddenSize, 1);
 
-    while (batch_position < epoch->input->size[0]) {
-        if (batch_position + batch_position > epoch->input->size[0]) {
+    while (batch_position < epoch->input->size[1]) {
+        printf("epoch iteration started\n");
+        if (batch_position + batch_position > epoch->input->size[1]) {
             // reduce batch size
-            batch_size = epoch->input->size[0] - batch_position;
+            printf("have to reduce batch size\n");
+            batch_size = epoch->input->size[1] - batch_position;
         }
         r->seqLen=batch_size;
         // need to reset the num of rows cause of the if above
         Xsub = Matrix_SubMatrix(epoch->input, 0, epoch->input->size[0], batch_position, batch_position + batch_size);
         Ysub = Matrix_SubMatrix(epoch->output, 0, epoch->output->size[0], batch_position, batch_position + batch_size);
         // do the actual training
+        printf("loss func started\n");
         gradient_info* gi = LossFunc(r, Xsub, Ysub, hprev);
+        printf("loss func finished\n");
         
         smoothLoss = smoothLoss * 0.999 + gi->loss * 0.001;
         // update parameters
@@ -285,12 +330,17 @@ int TrainRNN(rnn* r, training_data* epoch) {
         Matrix_Free(gi->dWhy);
         Matrix_Free(gi->dby);
         Matrix_Free(gi->dbh);
-        Matrix_Free(gi->h);
-        free(gi);
-
+        // Matrix_Free(gi->h);
+        Matrix_Free(hprev);
+        hprev = gi->h;
+        
         Matrix_Free(Xsub);
         Matrix_Free(Ysub);
-        printf("Loss: %lf", gi->loss);
+        printf("Loss: %lf\n", gi->loss);
+        free(gi);
+        printf("bathc position: %d batch size: %d\n", batch_position, batch_size);
+        int n;
+        scanf("%d", &n);
     }
 
     Matrix_Free(mWxh);

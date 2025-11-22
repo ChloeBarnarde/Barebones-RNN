@@ -33,10 +33,13 @@ bool CheckBounds(matrix* m, int row, int col) {
 bool CheckNull(matrix* m) {
     if (m==NULL)
         return false;
+    // printf("pass\n");
     if (m->values == NULL)
         return false;
+    // printf("pass\n");
     if (m->size == NULL)
         return false;
+    // printf("pass\n");
     return true;
 }
 
@@ -282,8 +285,12 @@ matrix* Matrix_VectorRow(matrix* m, int row) {
 }
 
 matrix* Matrix_VectorCol(matrix* m, int col) {
-    if (!CheckNull(m))
+    // printf("idfk\n");
+    if (!CheckNull(m)) {
+        printf("Failed null check");
         return NULL;
+    }
+    // printf("idfk\n");
     
     if (m->size[1] <= col)
         return NULL;
@@ -318,12 +325,13 @@ int Matrix_Equals(matrix* a, matrix* b) {
 }
 
 matrix* Matrix_SubMatrix(matrix* m, int rowStart, int rowEnd, int colStart, int colEnd) {
+    // printf("sub matrix checks started\n");
     // checks
     if (m == NULL) return NULL;
     if (rowStart < 0 || colStart < 0) return NULL;
-    if (rowEnd >= m->size[0]) return NULL;
-    if (colEnd >= m->size[1]) return NULL;
-
+    if (rowEnd > m->size[0]) return NULL;
+    if (colEnd > m->size[1]) return NULL;
+    // printf("sub matrix checks passed\n");
     matrix* sm = Matrix_Create(rowEnd-rowStart, colEnd-colStart);
     
     for (int rowi = rowStart; rowi < rowEnd; rowi++)
@@ -374,7 +382,7 @@ int Matrix_Print(matrix* m) {
 
 double Matrix_Get(matrix *m, int row, int col) {
     if (!CheckBounds(m, row, col)) {
-        printf("col and row out of bounds of matrix size");
+        printf("col and row out of bounds of matrix size\n");
         return NAN;
     }
 

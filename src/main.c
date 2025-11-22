@@ -73,7 +73,7 @@ int main() {
     fp = fopen(fileName, "r");
     // populate X and Y matricies
     while(fgets(row, 200, fp)) {
-        if (i >= limit) {
+        if (i > limit) {
             break;
         }
         
@@ -99,9 +99,9 @@ int main() {
 
     printf("done assign values to X and Y matricies\n");
     rnn* r = malloc(sizeof(rnn));
-    r->inputSize = X->size[1];
+    r->inputSize = X->size[0];
     r->hiddenSize = 100;
-    r->outputSize = Y->size[1];
+    r->outputSize = Y->size[0];
     InitializeWeights(r);
 
     training_data* epoch = malloc(sizeof(epoch));
@@ -109,7 +109,9 @@ int main() {
     epoch->input = X;
     epoch->output = Y;
 
-    TrainRNN(r, epoch);
+    printf("training started\n");
+    int result = TrainRNN(r, epoch);
+    printf("training finished: %d\n", result);
 
 
     FreeWeights(r);
