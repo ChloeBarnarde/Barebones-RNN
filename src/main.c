@@ -119,12 +119,23 @@ int main() {
     InitializeWeights(r);
 
     training_data* epoch = malloc(sizeof(epoch));
-    epoch->iterations = limit/100;
+    epoch->iterations = limit/25;
     epoch->input = X;
     epoch->output = Y;
 
     printf("training started\n");
     int result = TrainRNN(r, epoch);
+    result = TrainRNN(r, epoch);
+    result = TrainRNN(r, epoch);
+    result = TrainRNN(r, epoch);
+    result = TrainRNN(r, epoch);
+    result = TrainRNN(r, epoch);
+    result = TrainRNN(r, epoch);
+    result = TrainRNN(r, epoch);
+    result = TrainRNN(r, epoch);
+    result = TrainRNN(r, epoch);
+    result = TrainRNN(r, epoch);
+    result = TrainRNN(r, epoch);
     result = TrainRNN(r, epoch);
     result = TrainRNN(r, epoch);
     result = TrainRNN(r, epoch);

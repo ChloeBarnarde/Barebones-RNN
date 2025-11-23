@@ -237,6 +237,7 @@ int Matrix_Transpose(matrix* a) {
         }
     }
 
+    Matrix_Free(temp);
     return EXIT_SUCCESS;
 }
 

@@ -1,5 +1,6 @@
 #include <math.h>
 #include "rnn.h"
+#include "matrixMath.h"
 // a lot of this code takes insporation from Andrej Karpathy's blog https://karpathy.github.io/2015/05/21/rnn-effectiveness/
 // in a lot of cases it is a c implementation of the minimal character-level RNN language model in Python/numpy which he made.
 
@@ -216,9 +217,9 @@ gradient_info* LossFunc(rnn* rnn, matrix* input, matrix* target, matrix* hprev) 
         Matrix_Add(dh, dhnext);
         //backprop thourhg tanh
         hsRowT = Matrix_VectorCol(hs, t + 1);
-        Matrix_ElementWiseFunc2M(hsRowT, hsRowT, mult);
-        Matrix_ElemetWiseFunc1M(hsRowT, minusOne);
-        Matrix_ElementWiseFunc2M(hsRowT, dh, mult);
+        Matrix_ElementWiseFunc2M(hsRowT, hsRowT, &mult);
+        Matrix_ElemetWiseFunc1M(hsRowT, &minusOne);
+        Matrix_ElementWiseFunc2M(hsRowT, dh,&mult);
         Matrix_Free(dh);
 
         Matrix_Add(dbh, hsRowT);
@@ -264,7 +265,7 @@ gradient_info* LossFunc(rnn* rnn, matrix* input, matrix* target, matrix* hprev) 
 
     // Freeing
     Matrix_Free(ps);
-    
+    Matrix_Free(ys); 
     // might want to change this to an out variable instead?
     gradient_info* gi = malloc(sizeof(gradient_info));
     gi->loss = loss;
@@ -278,7 +279,7 @@ gradient_info* LossFunc(rnn* rnn, matrix* input, matrix* target, matrix* hprev) 
     gi->h = Matrix_VectorCol(hs, rnn->seqLen);
     // printf("asdfasdfasdf\n");
     Matrix_Free(hs);
-    
+    Matrix_Free(dhnext); 
     return gi;
 }
 
@@ -323,6 +324,7 @@ int ApplyAdagrad(matrix* parameter, matrix* dparameter, matrix* memParameter, do
     Matrix_Add(parameter, copy);
     
     Matrix_Free(copy);
+    Matrix_Free(copy2);
     Matrix_Free(memCopy);
 }
 
@@ -375,6 +377,7 @@ int TrainRNN(rnn* r, training_data* epoch) {
         // do the actual training
         // printf("loss func started\n");
         gradient_info* gi = LossFunc(r, Xsub, Ysub, hprev);
+        
         // printf("loss func finished\n");
         
         smoothLoss = smoothLoss * 0.999 + gi->loss * 0.001;
