@@ -157,7 +157,7 @@ gradient_info* LossFunc(rnn* rnn, matrix* input, matrix* target, matrix* hprev);
 //     return sum;
 // }
 
-int TrainRNN(rnn* r, training_data* epoch);
+int TrainRNN(rnn* r, training_data* epoch, int limit);
 
 /// @brief Initailize all the weights in the struct to sample from a normal distribution
 /// @param r the rnn to initalize the weights in

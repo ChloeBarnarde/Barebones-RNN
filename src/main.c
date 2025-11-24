@@ -110,7 +110,6 @@ int main() {
         i++;
     }
 
-    printf("done assign values to X and Y matricies\n");
     rnn* r = malloc(sizeof(rnn));
     r->inputSize = X->size[0];
     r->hiddenSize = 100;
@@ -123,35 +122,13 @@ int main() {
     epoch->input = X;
     epoch->output = Y;
 
-    printf("training started\n");
-    int result = TrainRNN(r, epoch);
-    result = TrainRNN(r, epoch);
-    result = TrainRNN(r, epoch);
-    result = TrainRNN(r, epoch);
-    result = TrainRNN(r, epoch);
-    result = TrainRNN(r, epoch);
-    result = TrainRNN(r, epoch);
-    result = TrainRNN(r, epoch);
-    result = TrainRNN(r, epoch);
-    result = TrainRNN(r, epoch);
-    result = TrainRNN(r, epoch);
-    result = TrainRNN(r, epoch);
-    result = TrainRNN(r, epoch);
-    result = TrainRNN(r, epoch);
-    result = TrainRNN(r, epoch);
-    result = TrainRNN(r, epoch);
-    result = TrainRNN(r, epoch);
-    result = TrainRNN(r, epoch);
-    result = TrainRNN(r, epoch);
-    result = TrainRNN(r, epoch);
-    result = TrainRNN(r, epoch);
-    result = TrainRNN(r, epoch);
-    result = TrainRNN(r, epoch);
-    result = TrainRNN(r, epoch);
-    printf("training finished: %d\n", result);
+    printf("======= training started =======\n");
+    int result = TrainRNN(r, epoch, 5);
+    printf("======= training finished with exit code: %d =======\n", result);
 
     matrix* results = evaluate(r);
     // convert results to string
+    printf("Sample from model: \n");
     for (int i = 0; i < results->size[0]; i++)
     {
         printf("%c", ixToChar[(int)Matrix_Get(results, i, 0)]);

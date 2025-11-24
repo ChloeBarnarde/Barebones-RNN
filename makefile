@@ -22,3 +22,5 @@ test.o:
 matrixMath.o: matrixMath.c
 	$(CC) -c src/matrixMath.c src/matrixMath.h
 
+matrixMath.c:
+

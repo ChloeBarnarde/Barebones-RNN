@@ -55,7 +55,6 @@ gradient_info* LossFunc(rnn* rnn, matrix* input, matrix* target, matrix* hprev) 
         matrix* Wxh= Matrix_Create(rnn->Wxh->size[0], rnn->Wxh->size[1]);
         Matrix_Copy(rnn->Wxh, Wxh);
         matrix* Whh = Matrix_Create(rnn->Whh->size[0], rnn->Whh->size[1]);
-        containsNan(rnn->Whh, "whh");
         Matrix_Copy(rnn->Whh, Whh);
         
         
@@ -250,7 +249,6 @@ double Divide(double a, double b) {
 
 int ApplyAdagrad(matrix* parameter, matrix* dparameter, matrix* memParameter, double learningRate) {
     //updating values with adagrad
-    // printf("adagrad started\n");
     matrix* copy = Matrix_Create(1, 1);
     matrix* copy2 = Matrix_Create(1, 1);
     matrix* memCopy = Matrix_Create(1, 1);
@@ -263,7 +261,6 @@ int ApplyAdagrad(matrix* parameter, matrix* dparameter, matrix* memParameter, do
     Matrix_Copy(memParameter, memCopy);
     Matrix_ElemetWiseFunc1M(memCopy, &AddTiny);
     Matrix_ElemetWiseFunc1M(memCopy, &Sqrt); // could potentially just use the math library function instead??
-    containsNan(memCopy, "memcopy");
     Matrix_Scaler(copy, -learningRate);
     Matrix_ElementWiseFunc2M(copy, memCopy, &Divide);
     Matrix_Add(parameter, copy);
@@ -310,28 +307,25 @@ int TrainRNN(rnn* r, training_data* epoch, int limit) {
     matrix* hprev = Matrix_Create(r->hiddenSize, 1);
 
     // setup for progressBar
-    char epochBar[limit + 1];
-    epochBar[limit] = '\0';
-    for (int i = 0; i < limit; i++) {
-        epochBar[i] = "_";
+    int batchBarSize = 40;
+    char batchBar[batchBarSize + 1];
+    batchBar[batchBarSize] = '\0';
+    for (int i = 0; i < batchBarSize; i++) {
+        batchBar[i] = '_';
     }
-
-    char batchBar[epoch->iterations + 1];
-    batchBar[epoch->iterations] = '\0';
-    for (int i = 0; i < epoch->iterations; i++) {
-        batchBar[i] = "_";
-    }
-
-    printf("epochIter: %d [%s]\n", epochIter, epochBar);
 
     for (epochIter = 0; epochIter < limit; epochIter ++) {
         
-
+        for (int i = 0; i < batchBarSize; i++) {
+            batchBar[i] = '_';
+        }
+        printf("epoch: %d\n", epochIter);
         int batchIter = 0;
+
         while (batch_position < epoch->input->size[1]) {
             if (batch_position + batch_size > epoch->input->size[1]) {
                 // reduce batch size
-                printf("have to reduce batch size, new size: %d\n", batch_size);
+                // printf("have to reduce batch size, new size: %d\n", batch_size);
                 batch_size = epoch->input->size[1] - batch_position;
             }
             r->seqLen=batch_size;
@@ -341,17 +335,11 @@ int TrainRNN(rnn* r, training_data* epoch, int limit) {
             // do the actual training
             gradient_info* gi = LossFunc(r, Xsub, Ysub, hprev);
     
-            smoothLoss = smoothLoss * 0.999 + gi->loss * 0.001;
-    
-            containsNan(gi->h, "h ");        
+            smoothLoss = smoothLoss * 0.999 + gi->loss * 0.001;     
     
             // update parameters
             ApplyAdagrad(r->Wxh, gi->dWxh, mWxh, r->learningRate);
-            containsNan(r->Whh, "whh before");
             ApplyAdagrad(r->Whh, gi->dWhh, mWhh, r->learningRate);
-            containsNan(r->Whh, "whh after");
-            containsNan(gi->dWhh, "dwhh");
-            containsNan(mWhh, "mwhh");
             ApplyAdagrad(r->Why, gi->dWhy, mWhy, r->learningRate);
             ApplyAdagrad(r->by, gi->dby, mby, r->learningRate);
             ApplyAdagrad(r->bh, gi->dbh, mbh, r->learningRate);
@@ -371,16 +359,20 @@ int TrainRNN(rnn* r, training_data* epoch, int limit) {
             Matrix_Free(Xsub);
             Matrix_Free(Ysub);
             free(gi);
+
+            batchIter++;
+            for (int i = 0; i < (int)round(((float)batchIter/epoch->iterations)*batchBarSize); i++)
+            {
+                batchBar[i]='#';
+            }
+            printf("batchIter: %d [%s] SmoothLoss: %lf\r", batchIter, batchBar, smoothLoss);
         }
+        printf("\n");
 
-        epochIter++;
-
-        for (int i = 0; i < epochIter; i++)
-        {
-            epochBar[i]="█";
-        }
-        printf("epochIter: %d [%s] SmoothLoss: %lf\n", epochIter, epochBar, smoothLoss);
-
+        batch_position = 0;
+        batch_size = (int)round(((float)epoch->input->size[1]) / epoch->iterations);
+        Matrix_Free(hprev);
+        hprev = Matrix_Create(r->hiddenSize, 1);
     }
 
     Matrix_Free(mWxh);
@@ -415,12 +407,6 @@ int InitializeWeights(rnn* r) {
     r->Why = Matrix_Initialize(r->outputSize, r->hiddenSize, &SampleNormalDistribution);
     r->by = Matrix_Initialize(r->outputSize, 1, &SampleNormalDistribution);
     r->bh = Matrix_Initialize(r->hiddenSize, 1, &SampleNormalDistribution);
-
-    containsNan(r->Wxh, "Wxh ");
-    containsNan(r->Whh, "Whh ");
-    containsNan(r->Why, "Why ");
-    containsNan(r->bh, "bh ");
-    containsNan(r->by, "by ");
     return EXIT_SUCCESS;
 }
 
@@ -477,24 +463,6 @@ matrix* evaluate(rnn* r) {
         // double num = (double)rand() / RAND_MAX;
         int ix=0;
         double max = 0;
-        // for (i = 0; i < p->size[0]; i++)
-        // {
-        //     if (Matrix_Get(p, i, 0) < r) {
-        //         continue;
-        //     }
-        //     double closestGreater = __DBL_MAX__;
-        //     int ix;
-        //     for (int j = 0; j < p->size[0]; j++)
-        //     {
-        //         if (Matrix_Get(p, i, 0) < r) {continue;}
-        //         if (closestGreater > Matrix_Get(p, i, 0)) {
-        //             closestGreater = Matrix_Get(p, i, 0);
-        //             ix = j;
-        //         }
-        //     }
-            
-        //     // found what I'm looking for???
-        // }
         for (int i = 0; i < p->size[0]; i++)
         {
             if (max >= Matrix_Get(p, i, 0)) {continue;}
