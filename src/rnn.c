@@ -8,19 +8,6 @@ void printSize(matrix* m) {
     printf("%d %d\n", m->size[0], m->size[1]);
 }
 
-void containsNan(matrix* m, char* s) {
-    for (int rowi = 0; rowi < m->size[0]; rowi++) {
-        for (int coli = 0; coli < m->size[1]; coli++)
-        {
-            if (isnan(Matrix_Get(m, rowi, coli))) {
-                printf("%s Contains nan!!!!!!!!!!!!!!\n", s);
-                return;
-            }
-        }
-        
-    }
-}
-
 void Clip(matrix* m, double min, double max) {
     for (int rowi = 0; rowi < m->size[0]; rowi++)
     {
@@ -45,28 +32,18 @@ double minusOne(double a) {return 1 - a; }
 gradient_info* LossFunc(rnn* rnn, matrix* input, matrix* target, matrix* hprev) {
 
     // target and input is currently one hot encoded
-
     matrix* hs = Matrix_Create(rnn->hiddenSize, rnn->seqLen + 1);
     for (int rowi = 0; rowi < hs->size[0]; rowi++)
     {
-        // printf("getting matrix hprev\n");
-        if (isnan(Matrix_Get(hprev, rowi, 0))) {
-            printf("hprev contains nannnn ");
-        }
-        int result = Matrix_Set(hs, rowi, 0, Matrix_Get(hprev, rowi, 0));
-        if (result == EXIT_FAILURE) {
-            printf("Issue with hprev get\n");
-        }
+        Matrix_Set(hs, rowi, 0, Matrix_Get(hprev, rowi, 0));
     }
 
-    // printf("setting ys and ps\n");
     matrix* ys = Matrix_Create(rnn->outputSize, rnn->seqLen);
     matrix* ps = Matrix_Create(rnn->outputSize, rnn->seqLen);
     double loss = 0;
     
     for (int t = 0; t < rnn->seqLen; t++)
     {
-        // printf("sequence: %d\n", t);
         // matrices to free:
         //  - Wxh - done
         //  - Whh- done
@@ -85,12 +62,10 @@ gradient_info* LossFunc(rnn* rnn, matrix* input, matrix* target, matrix* hprev) 
         // evaluating 
         
         // function: tanh(Wxh * xs[t] + Whh * hs[t-1] + bh)
-        // printf("asdfasdfasdf\n");
         matrix* inputRowT = Matrix_VectorCol(input, t);
         Matrix_DotProd(Wxh, inputRowT);
         Matrix_Free(inputRowT);
         
-        // printf("asdfasdfasdf\n");
         matrix* hsRowTMinusOne = Matrix_VectorCol(hs, t); // t = t-1 becauwse length = seqLen+1
         Matrix_DotProd(Whh, hsRowTMinusOne);
         Matrix_Free(hsRowTMinusOne);
@@ -99,7 +74,6 @@ gradient_info* LossFunc(rnn* rnn, matrix* input, matrix* target, matrix* hprev) 
         Matrix_Add(Wxh, rnn->bh);
         for (int rowi = 0; rowi < hs->size[0]; rowi++)
         {
-            // printf("setting values\n");
             Matrix_Set(hs, rowi, t+1, tanh(Matrix_Get(Wxh, rowi, 0)));
         }
         Matrix_Free(Wxh);
@@ -114,9 +88,6 @@ gradient_info* LossFunc(rnn* rnn, matrix* input, matrix* target, matrix* hprev) 
         //  i.e. ys[t] = Why
         for (int rowi = 0; rowi < Why->size[0]; rowi++)
         {
-            if (isnan(Matrix_Get(Why, rowi, 0))) {
-                printf("%lf ", Matrix_Get(ys, rowi, t));
-            }
             Matrix_Set(ys, rowi, t, Matrix_Get(Why, rowi, 0));
         }
         // Matrix_Copy(Why, ys);
@@ -126,37 +97,22 @@ gradient_info* LossFunc(rnn* rnn, matrix* input, matrix* target, matrix* hprev) 
         double sum = 0;
         for (int rowi = 0; rowi < ys->size[0]; rowi++)
         {
-            if (isnan(Matrix_Get(ys, rowi, t))) {
-                // printf("%lf\n", Matrix_Get(ys, rowi, t));
-            }
-            // printf("current y: %lf\n", Matrix_Get(ys, rowi, t));
             Matrix_Set(ys, rowi, t, exp(Matrix_Get(ys, rowi, t)));
-            // printf("updated y: %lf\n", Matrix_Get(ys, rowi, t));
             sum += Matrix_Get(ys, rowi, t);
         }
         
         for (int rowi = 0; rowi < ps->size[0]; rowi++)
         {
             Matrix_Set(ps, rowi, t, Matrix_Get(ys, rowi, t) / sum);
-            // if (Matrix_Get(ps, rowi, t) == 0) {
-            //     printf("ps contains a zero\n");
-            // }
         }
+
         // softmax loss
         for (int rowi = 0; rowi < ps->size[0]; rowi++)
         {
-            if (Matrix_Get(ps, rowi, t) == 0) {
-            }
-            // printf("%lf, ", Matrix_Get(ps, rowi, t));
             loss -= Matrix_Get(target, rowi, t) * log(Matrix_Get(ps, rowi, t)); 
         }
-        // printf("\n");
-        // printf("%lf\n", loss);
         int n;
-        // scanf("%d", &n);
     }
-
-    // printf("finished eval\n");
 
     // === gradient ===
     // gradient of matrices
@@ -169,10 +125,8 @@ gradient_info* LossFunc(rnn* rnn, matrix* input, matrix* target, matrix* hprev) 
     //gradietn of hidden vector
     matrix* dhnext = Matrix_Create(rnn->hiddenSize, 1);
 
-    // printf("start gd\n");
     for (int t = rnn->seqLen - 1; t >= 0; t--)
     {
-        // printf("gradient: %d\n", t);
         // matrices to free:
         //  - dy - done
         //  - dyCopy - done
@@ -192,7 +146,6 @@ gradient_info* LossFunc(rnn* rnn, matrix* input, matrix* target, matrix* hprev) 
                 // only want to update the actual labels
                 continue;
             }
-            // printf("setting values\n");
             Matrix_Set(dy, rowi, 0, Matrix_Get(dy, rowi, 0) - 1);
             break;
         }
@@ -253,7 +206,6 @@ gradient_info* LossFunc(rnn* rnn, matrix* input, matrix* target, matrix* hprev) 
         Matrix_Copy(Whh, dhnext);
         Matrix_Free(Whh);
     }
-    // printf("finished gd\n");
 
     // gradient clipping
     // loop over all values of all gradients and clip between -5 and 5
@@ -269,26 +221,19 @@ gradient_info* LossFunc(rnn* rnn, matrix* input, matrix* target, matrix* hprev) 
     // might want to change this to an out variable instead?
     gradient_info* gi = malloc(sizeof(gradient_info));
     gi->loss = loss;
-    // printf("Loss: %lf", gi->loss);
     gi->dWxh = dWxh;
     gi->dWhh = dWhh;
     gi->dWhy = dWhy;
     gi->dbh = dbh;
     gi->dby = dby;
-    // printf("asdfasdfasdf\n");
     gi->h = Matrix_VectorCol(hs, rnn->seqLen);
-    // printf("asdfasdfasdf\n");
     Matrix_Free(hs);
     Matrix_Free(dhnext); 
     return gi;
 }
 
 double AddTiny(double a) {
-    a += 1e-8;
-    if (isnan(a)) {
-        // printf("FOUND NAN!");
-    }
-    return a;
+    return a + 1e-8;
 }
 double Sqrt(double a) {
     if (a < 0) {
@@ -328,7 +273,7 @@ int ApplyAdagrad(matrix* parameter, matrix* dparameter, matrix* memParameter, do
     Matrix_Free(memCopy);
 }
 
-int TrainRNN(rnn* r, training_data* epoch) {
+int TrainRNN(rnn* r, training_data* epoch, int limit) {
     // checks
     if (epoch->input->size[1] != epoch->output->size[1]) {
         printf("input cols and output cols don't match\n");
@@ -344,6 +289,7 @@ int TrainRNN(rnn* r, training_data* epoch) {
         return EXIT_FAILURE;
     }
 
+    int epochIter = 0;
     int batch_size = (int)round(((float)epoch->input->size[1]) / epoch->iterations);
     int batch_position = 0;
     double smoothLoss = -log((double)1/epoch->input->size[0])*batch_size;
@@ -363,66 +309,78 @@ int TrainRNN(rnn* r, training_data* epoch) {
 
     matrix* hprev = Matrix_Create(r->hiddenSize, 1);
 
-    while (batch_position < epoch->input->size[1]) {
-        // printf("epoch iteration started\n");
-        if (batch_position + batch_size > epoch->input->size[1]) {
-            // reduce batch size
-            printf("have to reduce batch size, new size: %d\n", batch_size);
-            batch_size = epoch->input->size[1] - batch_position;
+    // setup for progressBar
+    char epochBar[limit + 1];
+    epochBar[limit] = '\0';
+    for (int i = 0; i < limit; i++) {
+        epochBar[i] = "_";
+    }
+
+    char batchBar[epoch->iterations + 1];
+    batchBar[epoch->iterations] = '\0';
+    for (int i = 0; i < epoch->iterations; i++) {
+        batchBar[i] = "_";
+    }
+
+    printf("epochIter: %d [%s]\n", epochIter, epochBar);
+
+    for (epochIter = 0; epochIter < limit; epochIter ++) {
+        
+
+        int batchIter = 0;
+        while (batch_position < epoch->input->size[1]) {
+            if (batch_position + batch_size > epoch->input->size[1]) {
+                // reduce batch size
+                printf("have to reduce batch size, new size: %d\n", batch_size);
+                batch_size = epoch->input->size[1] - batch_position;
+            }
+            r->seqLen=batch_size;
+            // need to reset the num of rows cause of the if above
+            Xsub = Matrix_SubMatrix(epoch->input, 0, epoch->input->size[0], batch_position, batch_position + batch_size);
+            Ysub = Matrix_SubMatrix(epoch->output, 0, epoch->output->size[0], batch_position, batch_position + batch_size);
+            // do the actual training
+            gradient_info* gi = LossFunc(r, Xsub, Ysub, hprev);
+    
+            smoothLoss = smoothLoss * 0.999 + gi->loss * 0.001;
+    
+            containsNan(gi->h, "h ");        
+    
+            // update parameters
+            ApplyAdagrad(r->Wxh, gi->dWxh, mWxh, r->learningRate);
+            containsNan(r->Whh, "whh before");
+            ApplyAdagrad(r->Whh, gi->dWhh, mWhh, r->learningRate);
+            containsNan(r->Whh, "whh after");
+            containsNan(gi->dWhh, "dwhh");
+            containsNan(mWhh, "mwhh");
+            ApplyAdagrad(r->Why, gi->dWhy, mWhy, r->learningRate);
+            ApplyAdagrad(r->by, gi->dby, mby, r->learningRate);
+            ApplyAdagrad(r->bh, gi->dbh, mbh, r->learningRate);
+    
+    
+            batch_position += batch_size;
+    
+            // free matricies
+            Matrix_Free(gi->dWxh);
+            Matrix_Free(gi->dWhh);
+            Matrix_Free(gi->dWhy);
+            Matrix_Free(gi->dby);
+            Matrix_Free(gi->dbh);
+            Matrix_Free(hprev);
+            hprev = gi->h;
+    
+            Matrix_Free(Xsub);
+            Matrix_Free(Ysub);
+            free(gi);
         }
-        r->seqLen=batch_size;
-        // need to reset the num of rows cause of the if above
-        Xsub = Matrix_SubMatrix(epoch->input, 0, epoch->input->size[0], batch_position, batch_position + batch_size);
-        Ysub = Matrix_SubMatrix(epoch->output, 0, epoch->output->size[0], batch_position, batch_position + batch_size);
-        // do the actual training
-        // printf("loss func started\n");
-        gradient_info* gi = LossFunc(r, Xsub, Ysub, hprev);
-        
-        // printf("loss func finished\n");
-        
-        smoothLoss = smoothLoss * 0.999 + gi->loss * 0.001;
-        // printSize(gi->dbh);
-        // printSize(gi->dby);
-        // printSize(gi->dWhh);
-        // printSize(gi->dWhy);
-        // printSize(gi->dWxh);
-        // printSize(gi->h);
 
-        containsNan(gi->h, "h ");        
+        epochIter++;
 
-        // update parameters
-        ApplyAdagrad(r->Wxh, gi->dWxh, mWxh, r->learningRate);
-        containsNan(r->Whh, "whh before");
-        ApplyAdagrad(r->Whh, gi->dWhh, mWhh, r->learningRate);
-        containsNan(r->Whh, "whh after");
-        containsNan(gi->dWhh, "dwhh");
-        containsNan(mWhh, "mwhh");
-        ApplyAdagrad(r->Why, gi->dWhy, mWhy, r->learningRate);
-        ApplyAdagrad(r->by, gi->dby, mby, r->learningRate);
-        ApplyAdagrad(r->bh, gi->dbh, mbh, r->learningRate);
+        for (int i = 0; i < epochIter; i++)
+        {
+            epochBar[i]="█";
+        }
+        printf("epochIter: %d [%s] SmoothLoss: %lf\n", epochIter, epochBar, smoothLoss);
 
-
-        batch_position += batch_size;
-
-        // free matricies
-        Matrix_Free(gi->dWxh);
-        Matrix_Free(gi->dWhh);
-        Matrix_Free(gi->dWhy);
-        Matrix_Free(gi->dby);
-        Matrix_Free(gi->dbh);
-        // Matrix_Free(gi->h);
-        Matrix_Free(hprev);
-        hprev = gi->h;
-        // printSize(hprev);
-
-        Matrix_Free(Xsub);
-        Matrix_Free(Ysub);
-        printf("Loss: %lf\n", gi->loss);
-        printf("SmoothLoss: %lf\n", smoothLoss);
-        free(gi);
-        // printf("bathc position: %d batch size: %d\n", batch_position, batch_size);
-        int n;
-        // scanf("%d", &n);
     }
 
     Matrix_Free(mWxh);
@@ -446,7 +404,7 @@ double SampleNormalDistribution() {
     
     double mag = sqrt(-2. * log(u1));
     double z1 = cos(TOW_PI * u2);
-    // double z2 = cos(TOW_PI * u2);
+    // double z2 = sin(TOW_PI * u2); // don't need a second random number
 
     return z1;
 }
@@ -515,10 +473,8 @@ matrix* evaluate(rnn* r) {
         {
             Matrix_Set(p, rowi, 0, Matrix_Get(Why, rowi, 0) / sum);
         }
-
-        // random choice
         
-        // double r = (double)rand() / RAND_MAX;
+        // double num = (double)rand() / RAND_MAX;
         int ix=0;
         double max = 0;
         // for (i = 0; i < p->size[0]; i++)
