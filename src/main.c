@@ -118,12 +118,12 @@ int main() {
     InitializeWeights(r);
 
     training_data* epoch = malloc(sizeof(epoch));
-    epoch->iterations = limit/25;
+    epoch->iterations = limit/50;
     epoch->input = X;
     epoch->output = Y;
 
     printf("======= training started =======\n");
-    int result = TrainRNN(r, epoch, 5);
+    int result = TrainRNN(r, epoch, 100);
     printf("======= training finished with exit code: %d =======\n", result);
 
     matrix* results = evaluate(r);

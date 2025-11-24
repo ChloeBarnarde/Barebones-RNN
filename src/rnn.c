@@ -4,10 +4,6 @@
 // a lot of this code takes insporation from Andrej Karpathy's blog https://karpathy.github.io/2015/05/21/rnn-effectiveness/
 // in a lot of cases it is a c implementation of the minimal character-level RNN language model in Python/numpy which he made.
 
-void printSize(matrix* m) {
-    printf("%d %d\n", m->size[0], m->size[1]);
-}
-
 void Clip(matrix* m, double min, double max) {
     for (int rowi = 0; rowi < m->size[0]; rowi++)
     {
@@ -325,7 +321,6 @@ int TrainRNN(rnn* r, training_data* epoch, int limit) {
         while (batch_position < epoch->input->size[1]) {
             if (batch_position + batch_size > epoch->input->size[1]) {
                 // reduce batch size
-                // printf("have to reduce batch size, new size: %d\n", batch_size);
                 batch_size = epoch->input->size[1] - batch_position;
             }
             r->seqLen=batch_size;
@@ -484,4 +479,27 @@ matrix* evaluate(rnn* r) {
     Matrix_Free(x);
     Matrix_Free(h);
     return result;
+}
+
+double MSE_Loss(matrix* output, matrix* target) 
+{
+    // using MSE
+    // L(\hat y, y) = \sum^{Y_y}_{t=1}L(\hat y_t, y_t)
+
+    if (output->size[0] != target->size[0])
+        return -1.;
+    if (output->size[1] != target->size[1])
+        return -1.;
+    
+    double sum = 0;
+    for (int rowi = 0; rowi < output->size[0]; rowi++)
+    {
+        for (int coli = 0; coli < output->size[1]; coli++)
+        {
+            sum += pow(output->values[rowi*output->size[1]+coli] - target->values[rowi*output->size[1]+coli], 2);
+        }
+    }
+
+    sum /= output->size[0] * output->size[1];
+    return sum;
 }
