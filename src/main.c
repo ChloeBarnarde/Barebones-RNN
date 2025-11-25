@@ -20,9 +20,20 @@ double* GetValuesFromString(char* str, int len) {
     return values;
 }
 
+char ixToChar[];
+
+void Sample(matrix* results) {
+    printf("Sample from model: \n");
+    for (int i = 0; i < results->size[0]; i++)
+    {
+        printf("%c", ixToChar[(int)Matrix_Get(results, i, 0)]);
+    }
+    printf("\n");
+}
+
 int main() {
     // limiting how much we read so that it doesn't eat up memory
-    int limit = 20000;
+    int limit = 41;
 
     FILE* fp;
     char row[200];
@@ -65,7 +76,7 @@ int main() {
     printf("Dataset size: %d\n", dataset_size);
 
 
-    char ixToChar[one_hot_size];
+    ixToChar[one_hot_size];
     fp = fopen(onehotFileName, "r");
     int i = 0;
     while(fgets(row, 200, fp)) {
@@ -111,6 +122,7 @@ int main() {
     }
 
     rnn* r = malloc(sizeof(rnn));
+    printf("input size: %d\n", one_hot_size);
     r->inputSize = X->size[0];
     r->hiddenSize = 100;
     r->outputSize = Y->size[0];
@@ -118,12 +130,12 @@ int main() {
     InitializeWeights(r);
 
     training_data* epoch = malloc(sizeof(epoch));
-    epoch->iterations = limit/50;
+    epoch->iterations = 1;
     epoch->input = X;
     epoch->output = Y;
 
     printf("======= training started =======\n");
-    int result = TrainRNN(r, epoch, 100);
+    int result = TrainRNN(r, epoch, 100000, &Sample);
     printf("======= training finished with exit code: %d =======\n", result);
 
     matrix* results = evaluate(r);
@@ -133,6 +145,8 @@ int main() {
     {
         printf("%c", ixToChar[(int)Matrix_Get(results, i, 0)]);
     }
+    // 100, 50 = 87z77677x77z7777777777x7777z7777777777x7777x77777
+    // 275, 30 = uv5vvuuuuuuuuuuuuuu 
     printf("\n");
     
     

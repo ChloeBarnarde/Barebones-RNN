@@ -266,7 +266,7 @@ int ApplyAdagrad(matrix* parameter, matrix* dparameter, matrix* memParameter, do
     Matrix_Free(memCopy);
 }
 
-int TrainRNN(rnn* r, training_data* epoch, int limit) {
+int TrainRNN(rnn* r, training_data* epoch, int limit, void (*onComplete)(matrix*)) {
     // checks
     if (epoch->input->size[1] != epoch->output->size[1]) {
         printf("input cols and output cols don't match\n");
@@ -366,6 +366,12 @@ int TrainRNN(rnn* r, training_data* epoch, int limit) {
 
         batch_position = 0;
         batch_size = (int)round(((float)epoch->input->size[1]) / epoch->iterations);
+        
+        // r->seqLen=100;
+        matrix* results = evaluate(r);
+        onComplete(results);
+        Matrix_Free(results);
+        
         Matrix_Free(hprev);
         hprev = Matrix_Create(r->hiddenSize, 1);
     }
