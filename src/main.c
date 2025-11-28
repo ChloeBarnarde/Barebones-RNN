@@ -20,7 +20,7 @@ double* GetValuesFromString(char* str, int len) {
     return values;
 }
 
-char ixToChar[];
+char ixToChar[1]; // will reinitalize the array later
 
 void Sample(matrix* results) {
     printf("Sample from model: \n");
@@ -33,7 +33,7 @@ void Sample(matrix* results) {
 
 int main() {
     // limiting how much we read so that it doesn't eat up memory
-    int limit = 41;
+    int limit = 5000;
 
     FILE* fp;
     char row[200];
