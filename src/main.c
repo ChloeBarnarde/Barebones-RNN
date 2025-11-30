@@ -7,10 +7,69 @@
 #include "rnn.h"
 
 FILE* lossFile;
-void Sample(matrix* results, double smoothLoss, double test_smoothLoss) {
+void Sample(double smoothLoss, double test_smoothLoss) {
    fprintf(lossFile, "%lf,%lf\n", smoothLoss, test_smoothLoss); 
 }
 
+void CreateConfusionMatrix(rnn* r, training_data* epoch) {
+    lossFile = fopen("Output/ConfusionMatrixValues.csv", "w");
+    fprintf(lossFile, "TR,PR,TW,PW\n");
+
+    r->seqLen = epoch->testInput->size[1];
+    printf("Evaluating confusion matrix on test data with seqLen: %d\n", r->seqLen);
+    matrix* results = evaluate(r, epoch->testInput);
+    // confusion matrix values
+    int true_red = 0;
+    int pred_red = 0; // wrong prediction
+    int true_white = 0;
+    int pred_white = 0; // wrong prediction
+
+    for (int t = 0; t < r->seqLen; t++)
+    {
+        // find predicted class
+        int pred_class = -1;
+        double max_prob = 0;
+        for (int rowi = 0; rowi < results->size[0]; rowi++)
+        {
+            if (Matrix_Get(results, rowi, t) > max_prob) {
+                max_prob = Matrix_Get(results, rowi, t);
+                pred_class = rowi;
+            }
+        }
+
+        // find true class
+        int true_class = -1;
+        for (int rowi = 0; rowi < epoch->testOutput->size[0]; rowi++)
+        {
+            if (Matrix_Get(epoch->testOutput, rowi, t) == 1) {
+                true_class = rowi;
+                break;
+            }
+        }
+
+        if (true_class == 0) {
+            // true red
+            if (pred_class == 0) {
+                true_red++;
+            } else {
+                pred_white++;
+            }
+        } else {
+            // true white
+            if (pred_class == 1) {
+                true_white++;
+            } else {
+                pred_red++;
+            }
+        }
+    }
+    fprintf(lossFile, "%d,%d,%d,%d\n", true_red, pred_red, true_white, pred_white);
+
+
+    Matrix_Free(results);
+
+    fclose(lossFile);
+}
 int main() {
     // limiting amount of observations
     int limit = 10000;
@@ -157,10 +216,9 @@ int main() {
     }
     fclose(fp);
     
-    printf("input size: %d\n", one_hot_size);
     rnn* r = malloc(sizeof(rnn));
     r->inputSize = X->size[0];
-    r->hiddenSize = 100;
+    r->hiddenSize = 50;
     r->outputSize = Y->size[0];
     r->learningRate = 1e-1;
     InitializeWeights(r);
@@ -176,11 +234,15 @@ int main() {
     lossFile = fopen("Output/output.csv", "w");
     fprintf(lossFile, "TrainLoss,TestLoss\n"); 
     printf("======= training started =======\n");
-    int result = TrainRNN(r, epoch, 100, &Sample);
+    int result = TrainRNN(r, epoch, 200, &Sample);
     printf("======= training finished with exit code: %d =======\n", result);
     fclose(lossFile);
 
+    CreateConfusionMatrix(r, epoch);    
+
     system("python3 Output/createGraphs.py");
+
+    printf("Graphs have been saved to ./Output\n");
     
     FreeWeights(r);
     free(r);

@@ -1,8 +1,24 @@
 #include <math.h>
 #include "rnn.h"
 #include "matrixMath.h"
+
 // a lot of this code takes insporation from Andrej Karpathy's blog https://karpathy.github.io/2015/05/21/rnn-effectiveness/
 // in a lot of cases it is a c implementation of the minimal character-level RNN language model in Python/numpy which he made.
+
+int ContainsNan(matrix* m) {
+    for (int rowi = 0; rowi < m->size[0]; rowi++)
+    {
+        for (int coli = 0; coli < m->size[1]; coli++)
+        {
+            if (!isfinite(Matrix_Get(m, rowi, coli))) {
+                return 1;
+            }
+        }
+        
+    }
+    return 0;
+}
+
 
 void Clip(matrix* m, double min, double max) {
     for (int rowi = 0; rowi < m->size[0]; rowi++)
@@ -103,6 +119,9 @@ gradient_info* LossFunc(rnn* rnn, matrix* input, matrix* target, matrix* hprev) 
             Matrix_Set(ps, rowi, t, Matrix_Get(ys, rowi, t) / sum);
         }
 
+        if (ContainsNan(ps)) {
+            printf("NaN detected in ps at time %d\n", t);
+        }
         // testing method
         int ix=0;
         double max = 0;
@@ -113,7 +132,10 @@ gradient_info* LossFunc(rnn* rnn, matrix* input, matrix* target, matrix* hprev) 
             ix = i;
         }
         
-        correct_count += Matrix_Get(target, ix, t);
+        if (ix == 0) {
+            correct_count++;
+        }
+        // correct_count += Matrix_Get(target, ix, t);
 
         // softmax loss
         for (int rowi = 0; rowi < ps->size[0]; rowi++)
@@ -122,7 +144,7 @@ gradient_info* LossFunc(rnn* rnn, matrix* input, matrix* target, matrix* hprev) 
         }
         int n;
     }
-    //printf("\033[KCorrect count: %d/%d\n\033[1A", correct_count, rnn->seqLen);
+    // printf("\033[KCorrect count: %d/%d\n\033[1A", correct_count, rnn->seqLen);
 
     // === gradient ===
     // gradient of matrices
@@ -283,7 +305,7 @@ int ApplyAdagrad(matrix* parameter, matrix* dparameter, matrix* memParameter, do
     return EXIT_SUCCESS;
 }
 
-int TrainRNN(rnn* r, training_data* epoch, int limit, void (*onComplete)(matrix*, double, double)) {
+int TrainRNN(rnn* r, training_data* epoch, int limit, void (*onComplete)(double, double)) {
     // checks
     if (epoch->input->size[1] != epoch->output->size[1]) {
         printf("input cols and output cols don't match\n");
@@ -374,14 +396,16 @@ int TrainRNN(rnn* r, training_data* epoch, int limit, void (*onComplete)(matrix*
             free(gi);
 
             batchIter++;
+            if (batchIter > epoch->iterations) {
+                batchIter = epoch->iterations;
+            }
             for (int i = 0; i < (int)round(((float)batchIter/epoch->iterations)*batchBarSize); i++)
             {
                 batchBar[i]='#';
             }
             printf("\033[KbatchIter: %d [%s] SmoothLoss: %lf\n\033[1A", batchIter, batchBar, smoothLoss);
         }
-        printf("\n");
-
+        printf("\033[1A\033[K");
         // test
         Matrix_Free(hprev);
         hprev = Matrix_Create(r->hiddenSize, 1);
@@ -413,9 +437,9 @@ int TrainRNN(rnn* r, training_data* epoch, int limit, void (*onComplete)(matrix*
         batch_position = 0;
         batch_size = (int)round(((float)epoch->input->size[1]) / epoch->iterations);
         
-        matrix* results = evaluate(r);
-        onComplete(results, smoothLoss, test_smoothLoss);
-        Matrix_Free(results);
+        // matrix* results = evaluate(r, epoch->testInput);
+        onComplete(smoothLoss, test_smoothLoss);
+        // Matrix_Free(results);
         
         Matrix_Free(hprev);
         hprev = Matrix_Create(r->hiddenSize, 1);
@@ -467,13 +491,24 @@ int FreeWeights(rnn* r) {
 }
 
 
-matrix* evaluate(rnn* r) {
-    matrix* x = Matrix_Create(r->inputSize, 1);
-    Matrix_Set(x, 0, 0, 1); // x represents the first character in the dataset
+matrix* evaluate(rnn* r, matrix* inputs) {
+
+    if (inputs->size[0] != r->inputSize) {
+        printf("Input size does not match rnn input size\n");
+        return NULL;
+    }
+    if (inputs->size[1] != r->seqLen) {
+        printf("Input seqLen does not match rnn seqLen %d %d\n", inputs->size[1], r->seqLen);
+        return NULL;
+    }
+
     matrix* h = Matrix_Create(r->hiddenSize, 1);
-    matrix* result = Matrix_Create(r->seqLen, 1);
+    matrix* result = Matrix_Create(r->outputSize, r->seqLen);
+
     for (int t = 0; t < r->seqLen; t++)
     {
+        matrix* x = Matrix_VectorCol(inputs, t);
+
         matrix* Wxh = Matrix_Create(1, 1);
         Matrix_Copy(r->Wxh, Wxh);
         matrix* Whh = Matrix_Create(1, 1);
@@ -484,7 +519,7 @@ matrix* evaluate(rnn* r) {
         Matrix_Add(Wxh, r->bh);
         for (int rowi = 0; rowi < h->size[0]; rowi++)
         {
-            Matrix_Set(h, rowi, 0, Matrix_Get(Wxh, rowi, 0));
+            Matrix_Set(h, rowi, 0, tanh(Matrix_Get(Wxh, rowi, 0)));
         }
 
         matrix* Why = Matrix_Create(1, 1);
@@ -492,8 +527,10 @@ matrix* evaluate(rnn* r) {
         Matrix_DotProd(Why, h);
         Matrix_Add(Why, r->by);
 
+        // Why is size of outputSize x 1
         matrix* p = Matrix_Create(Why->size[0], Why->size[1]);
 
+        
         // for probobilities
         double sum = 0;
         for (int rowi = 0; rowi < Why->size[0]; rowi++)
@@ -506,28 +543,21 @@ matrix* evaluate(rnn* r) {
         {
             Matrix_Set(p, rowi, 0, Matrix_Get(Why, rowi, 0) / sum);
         }
+
         
-        double rand_num = (double)rand() / RAND_MAX;
         int ix=0;
         double max = 0;
         for (int i = 0; i < p->size[0]; i++)
         {
             if (max >= Matrix_Get(p, i, 0) ) {
-                //max = Matrix_Get(p, i, 0);
-                //ix = i;
                 continue;
             }
-            //if (Matrix_Get(p, i, 0) >= rand_num) {
-            //    continue;
-            //}
             max = Matrix_Get(p, i, 0);
             ix = i;
         }
 
-        Matrix_Set(result, t, 0, ix);
+        Matrix_Set(result, ix, t, 1);
         Matrix_Free(x);
-        x = Matrix_Create(r->inputSize, 1);
-        Matrix_Set(x, ix, 0, 1);
         
         Matrix_Free(p);
         Matrix_Free(Why);
@@ -535,7 +565,6 @@ matrix* evaluate(rnn* r) {
         Matrix_Free(Wxh);
     }
     
-    Matrix_Free(x);
     Matrix_Free(h);
     return result;
 }

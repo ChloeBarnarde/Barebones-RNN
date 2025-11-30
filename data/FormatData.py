@@ -17,6 +17,10 @@ idx_white = wine_white.index.to_list()
 np.random.shuffle(idx_white)
 wine_white = wine_white.loc[idx_white].reset_index(drop=True)
 
+# drop rows from white wine to balance dataset
+wine_white = wine_white.iloc[:len(wine_red)].reset_index(drop=True)
+
+
 # split into train and test sets
 train_portion = 0.8
 test_portion = 1 - train_portion
