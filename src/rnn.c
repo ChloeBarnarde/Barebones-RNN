@@ -478,12 +478,19 @@ matrix* evaluate(rnn* r) {
             Matrix_Set(p, rowi, 0, Matrix_Get(Why, rowi, 0) / sum);
         }
         
-        // double num = (double)rand() / RAND_MAX;
+        double rand_num = (double)rand() / RAND_MAX;
         int ix=0;
         double max = 0;
         for (int i = 0; i < p->size[0]; i++)
         {
-            if (max >= Matrix_Get(p, i, 0)) {continue;}
+            if (max >= Matrix_Get(p, i, 0) ) {
+                //max = Matrix_Get(p, i, 0);
+                //ix = i;
+                continue;
+            }
+            //if (Matrix_Get(p, i, 0) >= rand_num) {
+            //    continue;
+            //}
             max = Matrix_Get(p, i, 0);
             ix = i;
         }
