@@ -283,7 +283,7 @@ int ApplyAdagrad(matrix* parameter, matrix* dparameter, matrix* memParameter, do
     return EXIT_SUCCESS;
 }
 
-int TrainRNN(rnn* r, training_data* epoch, int limit, void (*onComplete)(matrix*)) {
+int TrainRNN(rnn* r, training_data* epoch, int limit, void (*onComplete)(matrix*, double)) {
     // checks
     if (epoch->input->size[1] != epoch->output->size[1]) {
         printf("input cols and output cols don't match\n");
@@ -384,9 +384,8 @@ int TrainRNN(rnn* r, training_data* epoch, int limit, void (*onComplete)(matrix*
         batch_position = 0;
         batch_size = (int)round(((float)epoch->input->size[1]) / epoch->iterations);
         
-        // r->seqLen=100;
         matrix* results = evaluate(r);
-        onComplete(results);
+        onComplete(results, smoothLoss);
         Matrix_Free(results);
         
         Matrix_Free(hprev);

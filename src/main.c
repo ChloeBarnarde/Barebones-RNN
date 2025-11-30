@@ -6,29 +6,9 @@
 #include "matrixMath.h"
 #include "rnn.h"
 
-double* GetValuesFromString(char* str, int len) {
-    double* values = malloc(sizeof(double) * len);
-    char* eptr;
-    char* substringValue = malloc(sizeof(char) * 2);
-    for (int i = 0; i < len; i++)
-    {
-        strncpy(substringValue, str+i, 1);
-        substringValue[1]='\0';
-        values[i] = strtod(substringValue, &eptr);
-    }
-    free(substringValue);
-    return values;
-}
-
-char ixToChar[1]; // will reinitalize the array later
-
-void Sample(matrix* results) {
-    //printf("Sample from model: \n");
-    //for (int i = 0; i < results->size[0]; i++)
-    //{
-    //    printf("%c", ixToChar[(int)Matrix_Get(results, i, 0)]);
-    //}
-    //printf("\n");
+FILE* lossFile;
+void Sample(matrix* results, double smoothLoss) {
+   fprintf(lossFile, "%lf\n", smoothLoss); 
 }
 
 int main() {
@@ -181,9 +161,13 @@ int main() {
     epoch->input = X;
     epoch->output = Y;
 
+
+    lossFile = fopen("Output/output.csv", "w");
+    fprintf(lossFile, "TrainLoss\n"); 
     printf("======= training started =======\n");
-    int result = TrainRNN(r, epoch, 100, &Sample);
+    int result = TrainRNN(r, epoch, 10, &Sample);
     printf("======= training finished with exit code: %d =======\n", result);
+    fclose(lossFile);
 
     matrix* results = evaluate(r);
     // convert results to string
