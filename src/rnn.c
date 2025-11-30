@@ -283,7 +283,7 @@ int ApplyAdagrad(matrix* parameter, matrix* dparameter, matrix* memParameter, do
     return EXIT_SUCCESS;
 }
 
-int TrainRNN(rnn* r, training_data* epoch, int limit, void (*onComplete)(matrix*, double)) {
+int TrainRNN(rnn* r, training_data* epoch, int limit, void (*onComplete)(matrix*, double, double)) {
     // checks
     if (epoch->input->size[1] != epoch->output->size[1]) {
         printf("input cols and output cols don't match\n");
@@ -303,6 +303,7 @@ int TrainRNN(rnn* r, training_data* epoch, int limit, void (*onComplete)(matrix*
     int batch_size = (int)round(((float)epoch->input->size[1]) / epoch->iterations);
     int batch_position = 0;
     double smoothLoss = -log((double)1/epoch->input->size[0])*batch_size;
+    double test_smoothLoss = -log((double)1/epoch->input->size[0])*batch_size;
 
     // memory matrices for adagrad
     matrix* mWxh = Matrix_Create(r->Wxh->size[0], r->Wxh->size[1]);
@@ -332,7 +333,7 @@ int TrainRNN(rnn* r, training_data* epoch, int limit, void (*onComplete)(matrix*
         for (int i = 0; i < batchBarSize; i++) {
             batchBar[i] = '_';
         }
-        printf("epoch: %d\n", epochIter);
+        printf("epoch: %d Train Loss: %lf Test Loss: %lf\n", epochIter, smoothLoss, test_smoothLoss);
         int batchIter = 0;
 
         while (batch_position < epoch->input->size[1]) {
@@ -381,16 +382,45 @@ int TrainRNN(rnn* r, training_data* epoch, int limit, void (*onComplete)(matrix*
         }
         printf("\n");
 
+        // test
+        Matrix_Free(hprev);
+        hprev = Matrix_Create(r->hiddenSize, 1);
+        batch_position = 0;
+        batch_size = (int)round(((float)epoch->input->size[1]) / epoch->iterations);
+
+        while (batch_position < epoch->testInput->size[1]) {
+            if (batch_position + batch_size > epoch->testInput->size[1]) {
+                // reduce batch size
+                batch_size = epoch->testInput->size[1] - batch_position;
+            }
+            r->seqLen=batch_size;
+            // need to reset the num of rows cause of the if above
+            Xsub = Matrix_SubMatrix(epoch->testInput, 0, epoch->testInput->size[0], batch_position, batch_position + batch_size);
+            Ysub = Matrix_SubMatrix(epoch->testOutput, 0, epoch->testOutput->size[0], batch_position, batch_position + batch_size);
+            // do the actual testing
+            double loss = TestRNN(r, Xsub, Ysub, hprev);
+    
+            test_smoothLoss = test_smoothLoss * 0.999 + loss * 0.001;
+    
+            batch_position += batch_size;
+    
+            // free matrices
+            Matrix_Free(Xsub);
+            Matrix_Free(Ysub);
+        }    
+
+        // reset values
         batch_position = 0;
         batch_size = (int)round(((float)epoch->input->size[1]) / epoch->iterations);
         
         matrix* results = evaluate(r);
-        onComplete(results, smoothLoss);
+        onComplete(results, smoothLoss, test_smoothLoss);
         Matrix_Free(results);
         
         Matrix_Free(hprev);
         hprev = Matrix_Create(r->hiddenSize, 1);
-    }
+
+        }
 
     Matrix_Free(mWxh);
     Matrix_Free(mWhh);
@@ -531,4 +561,101 @@ double MSE_Loss(matrix* output, matrix* target)
 
     sum /= output->size[0] * output->size[1];
     return sum;
+}
+
+
+double TestRNN(rnn* rnn, matrix* input, matrix* target, matrix* hprev) {
+    // target and input is currently one hot encoded
+    matrix* hs = Matrix_Create(rnn->hiddenSize, rnn->seqLen + 1);
+
+    for (int rowi = 0; rowi < hs->size[0]; rowi++)
+    {
+        Matrix_Set(hs, rowi, 0, Matrix_Get(hprev, rowi, 0));
+    }
+
+    matrix* ys = Matrix_Create(rnn->outputSize, rnn->seqLen);
+    matrix* ps = Matrix_Create(rnn->outputSize, rnn->seqLen);
+    double loss = 0;
+    
+    for (int t = 0; t < rnn->seqLen; t++)
+    {
+        // matrices to free:
+        //  - Wxh - done
+        //  - Whh- done
+        //  - inputRowT - done
+        //  - hsRowTminusOne - done
+        //  - Why - done
+        //  - hsRowT - done
+        
+        matrix* Wxh= Matrix_Create(rnn->Wxh->size[0], rnn->Wxh->size[1]);
+        Matrix_Copy(rnn->Wxh, Wxh);
+        matrix* Whh = Matrix_Create(rnn->Whh->size[0], rnn->Whh->size[1]);
+        Matrix_Copy(rnn->Whh, Whh);
+        
+        
+        // evaluating 
+        
+        // function: tanh(Wxh * xs[t] + Whh * hs[t-1] + bh)
+        matrix* inputRowT = Matrix_VectorCol(input, t);
+        Matrix_DotProd(Wxh, inputRowT);
+        Matrix_Free(inputRowT);
+        
+        matrix* hsRowTMinusOne = Matrix_VectorCol(hs, t); // t = t-1 because length = seqLen+1
+        Matrix_DotProd(Whh, hsRowTMinusOne);
+        Matrix_Free(hsRowTMinusOne);
+        Matrix_Add(Wxh, Whh);
+        Matrix_Free(Whh);
+        Matrix_Add(Wxh, rnn->bh);
+        for (int rowi = 0; rowi < hs->size[0]; rowi++)
+        {
+            Matrix_Set(hs, rowi, t+1, tanh(Matrix_Get(Wxh, rowi, 0)));
+        }
+        Matrix_Free(Wxh);
+
+        //function: Why * hs[t] + by
+        matrix* Why = Matrix_Create(rnn->Why->size[0], rnn->Why->size[1]);
+        matrix* hsRowT = Matrix_VectorCol(hs, t+1);
+        Matrix_DotProd(Why, hsRowT);
+        Matrix_Free(hsRowT);
+        Matrix_Add(Why, rnn->by); // Why = ys
+        // fix here. set col t of ys to why.
+        //  i.e. ys[t] = Why
+        for (int rowi = 0; rowi < Why->size[0]; rowi++)
+        {
+            Matrix_Set(ys, rowi, t, Matrix_Get(Why, rowi, 0));
+        }
+        // Matrix_Copy(Why, ys);
+        Matrix_Free(Why);
+        
+        // for probobilities
+        double sum = 0;
+        for (int rowi = 0; rowi < ys->size[0]; rowi++)
+        {
+            Matrix_Set(ys, rowi, t, exp(Matrix_Get(ys, rowi, t)));
+            sum += Matrix_Get(ys, rowi, t);
+        }
+        
+        for (int rowi = 0; rowi < ps->size[0]; rowi++)
+        {
+            Matrix_Set(ps, rowi, t, Matrix_Get(ys, rowi, t) / sum);
+        }
+
+        // softmax loss
+        for (int rowi = 0; rowi < ps->size[0]; rowi++)
+        {
+            loss -= Matrix_Get(target, rowi, t) * log(Matrix_Get(ps, rowi, t)); 
+        }
+        int n;
+    }
+
+    for (int rowi = 0; rowi < hs->size[0]; rowi++)
+    {
+        Matrix_Set(hprev, rowi, 0, Matrix_Get(hs, rowi, rnn->seqLen));
+    }
+
+    Matrix_Free(ys);
+    Matrix_Free(ps);
+    Matrix_Free(hs);
+
+    return loss;
 }

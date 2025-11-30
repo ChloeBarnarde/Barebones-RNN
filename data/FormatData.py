@@ -8,15 +8,14 @@ wine_red['type'] = 0  # Red wine labeled as 0
 wine_white = pd.read_csv('data/winequality-white.csv', sep=';')
 wine_white['type'] = 1  # White wine labeled as 1
 
+# shuffle for splitting
 idx_red = wine_red.index.to_list()
 np.random.shuffle(idx_red)
 wine_red = wine_red.loc[idx_red].reset_index(drop=True)
-print(wine_red.head())
 
 idx_white = wine_white.index.to_list()
 np.random.shuffle(idx_white)
 wine_white = wine_white.loc[idx_white].reset_index(drop=True)
-print(wine_white.head())
 
 # split into train and test sets
 train_portion = 0.8

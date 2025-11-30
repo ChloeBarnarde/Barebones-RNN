@@ -29,6 +29,8 @@ struct rnn {
 struct training_data {
     matrix* input; // X
     matrix* output; // Y
+    matrix* testInput; // test X
+    matrix* testOutput; // test Y
     int iterations;
 } typedef training_data;
 
@@ -69,7 +71,10 @@ double MSE_Loss(matrix* output, matrix* target);
 /// @param epoch epoch data
 /// @param limit how many times to go through epoch
 /// @return exit status
-int TrainRNN(rnn* r, training_data* epoch, int limit, void (*onComplete)(matrix*, double));
+int TrainRNN(rnn* r, training_data* epoch, int limit, void (*onComplete)(matrix*, double, double));
+
+///@brief tests the rnn on the given epoch and returns the loss
+double TestRNN(rnn* r, matrix* input, matrix* target, matrix* hprev);
 
 /// @brief Initailize all the weights in the struct to sample from a normal distribution
 /// @param r the rnn to initalize the weights in
