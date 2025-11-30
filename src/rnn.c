@@ -38,6 +38,8 @@ gradient_info* LossFunc(rnn* rnn, matrix* input, matrix* target, matrix* hprev) 
     matrix* ps = Matrix_Create(rnn->outputSize, rnn->seqLen);
     double loss = 0;
     
+    // for testing
+    int correct_count = 0;
     for (int t = 0; t < rnn->seqLen; t++)
     {
         // matrices to free:
@@ -101,6 +103,18 @@ gradient_info* LossFunc(rnn* rnn, matrix* input, matrix* target, matrix* hprev) 
             Matrix_Set(ps, rowi, t, Matrix_Get(ys, rowi, t) / sum);
         }
 
+        // testing method
+        int ix=0;
+        double max = 0;
+        for (int i = 0; i < ps->size[0]; i++)
+        {
+            if (max >= Matrix_Get(ps, i, t)) {continue;}
+            max = Matrix_Get(ps, i, 0);
+            ix = i;
+        }
+        
+        correct_count += Matrix_Get(target, ix, t);
+
         // softmax loss
         for (int rowi = 0; rowi < ps->size[0]; rowi++)
         {
@@ -108,6 +122,7 @@ gradient_info* LossFunc(rnn* rnn, matrix* input, matrix* target, matrix* hprev) 
         }
         int n;
     }
+    //printf("\033[KCorrect count: %d/%d\n\033[1A", correct_count, rnn->seqLen);
 
     // === gradient ===
     // gradient of matrices
@@ -204,16 +219,16 @@ gradient_info* LossFunc(rnn* rnn, matrix* input, matrix* target, matrix* hprev) 
 
     // gradient clipping
     // loop over all values of all gradients and clip between -5 and 5
-    Clip(dWxh, -5, 5);
-    Clip(dWhh, -5, 5);
-    Clip(dWhy, -5, 5);
-    Clip(dby, -5, 5);
-    Clip(dbh, -5, 5);
+    Clip(dWxh, -5, 50);
+    Clip(dWhh, -5, 50);
+    Clip(dWhy, -5, 50);
+    Clip(dby, -5, 50);
+    Clip(dbh, -5, 50);
 
     // Freeing
     Matrix_Free(ps);
     Matrix_Free(ys); 
-    // might want to change this to an out variable instead?
+
     gradient_info* gi = malloc(sizeof(gradient_info));
     gi->loss = loss;
     gi->dWxh = dWxh;
@@ -264,6 +279,8 @@ int ApplyAdagrad(matrix* parameter, matrix* dparameter, matrix* memParameter, do
     Matrix_Free(copy);
     Matrix_Free(copy2);
     Matrix_Free(memCopy);
+
+    return EXIT_SUCCESS;
 }
 
 int TrainRNN(rnn* r, training_data* epoch, int limit, void (*onComplete)(matrix*)) {
@@ -360,7 +377,7 @@ int TrainRNN(rnn* r, training_data* epoch, int limit, void (*onComplete)(matrix*
             {
                 batchBar[i]='#';
             }
-            printf("batchIter: %d [%s] SmoothLoss: %lf\r", batchIter, batchBar, smoothLoss);
+            printf("\033[KbatchIter: %d [%s] SmoothLoss: %lf\n\033[1A", batchIter, batchBar, smoothLoss);
         }
         printf("\n");
 

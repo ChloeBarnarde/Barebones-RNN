@@ -126,16 +126,16 @@ int main() {
     r->inputSize = X->size[0];
     r->hiddenSize = 100;
     r->outputSize = Y->size[0];
-    r->learningRate = 1e-1;
+    r->learningRate = 2.5e-1;
     InitializeWeights(r);
 
     training_data* epoch = malloc(sizeof(epoch));
-    epoch->iterations = 1;
+    epoch->iterations = dataset_size/50;
     epoch->input = X;
     epoch->output = Y;
 
     printf("======= training started =======\n");
-    int result = TrainRNN(r, epoch, 100000, &Sample);
+    int result = TrainRNN(r, epoch, 100, &Sample);
     printf("======= training finished with exit code: %d =======\n", result);
 
     matrix* results = evaluate(r);
