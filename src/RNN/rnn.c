@@ -142,7 +142,6 @@ gradient_info* LossFunc(rnn* rnn, matrix* input, matrix* target, matrix* hprev) 
         {
             loss -= Matrix_Get(target, rowi, t) * log(Matrix_Get(ps, rowi, t)); 
         }
-        int n;
     }
     // printf("\033[KCorrect count: %d/%d\n\033[1A", correct_count, rnn->seqLen);
 
@@ -355,7 +354,8 @@ int TrainRNN(rnn* r, training_data* epoch, int limit, void (*onComplete)(double,
         for (int i = 0; i < batchBarSize; i++) {
             batchBar[i] = '_';
         }
-        printf("epoch: %d Train Loss: %lf Test Loss: %lf\n", epochIter, smoothLoss, test_smoothLoss);
+        printf("epoch: %d/%d Train Loss: %lf Test Loss: %lf\n", 
+            epochIter, limit, smoothLoss, test_smoothLoss);
         int batchIter = 0;
 
         while (batch_position < epoch->input->size[1]) {
@@ -466,7 +466,7 @@ double SampleNormalDistribution() {
     const double TOW_PI = 2. * M_PI;
     
     double mag = sqrt(-2. * log(u1));
-    double z1 = cos(TOW_PI * u2);
+    double z1 = mag * cos(TOW_PI * u2);
     // double z2 = sin(TOW_PI * u2); // don't need a second random number
 
     return z1;
@@ -674,7 +674,6 @@ double TestRNN(rnn* rnn, matrix* input, matrix* target, matrix* hprev) {
         {
             loss -= Matrix_Get(target, rowi, t) * log(Matrix_Get(ps, rowi, t)); 
         }
-        int n;
     }
 
     for (int rowi = 0; rowi < hs->size[0]; rowi++)
