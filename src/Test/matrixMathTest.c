@@ -1,4 +1,4 @@
-#include "../matrixMath.h"
+#include "matrixMath.h"
 #include <stdlib.h>
 #include <stdio.h>
 #define ANSI_COLOR_RESET   "\x1b[0m"

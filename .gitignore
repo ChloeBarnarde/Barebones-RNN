@@ -63,3 +63,6 @@ Output/output.csv
 data/train_data.csv
 data/test_data.csv
 Output/ConfusionMatrixValues.csv
+
+#builds
+build/
