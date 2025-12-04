@@ -57,11 +57,11 @@ double Add(double a, double b) {
 
 /* ===Creation=== */
 
-matrix* Matrix_Create(int rows, int cols) {
-   return Matrix_Initialize(rows, cols, &zero);
+matrix* matrix_create(int rows, int cols) {
+   return matrix_initialize(rows, cols, &zero);
 }
 
-matrix* Matrix_Initialize(int rows, int cols, double (*fprt)()) {
+matrix* matrix_initialize(int rows, int cols, double (*fprt)()) {
     matrix* m = (matrix*)malloc(sizeof(matrix));
     // allocate memory
     m->size = malloc(sizeof(int)*2);
@@ -79,7 +79,7 @@ matrix* Matrix_Initialize(int rows, int cols, double (*fprt)()) {
     return m;
 }
 
-matrix* Matrix_InitializeVarArg(int rows, int cols, ...) {
+matrix* matrix_initialize_vararg(int rows, int cols, ...) {
     va_list args;
     va_start(args, cols);  
     
@@ -104,14 +104,14 @@ matrix* Matrix_InitializeVarArg(int rows, int cols, ...) {
 }
 
 
-void Matrix_Free(matrix* m) {
+void matrix_free(matrix* m) {
     free(m->values);
     free(m->size);
     free(m);
 }
 
 
-int Matrix_DotProd(matrix* a, matrix* b) {
+int matrix_dot_prod(matrix* a, matrix* b) {
     if (!CheckNull(a) || !CheckNull(b))
         return EXIT_FAILURE;
 
@@ -120,8 +120,8 @@ int Matrix_DotProd(matrix* a, matrix* b) {
         return EXIT_FAILURE;
     }
 
-    matrix* temp = Matrix_Create(a->size[0], a->size[1]);
-    Matrix_Copy(a, temp);
+    matrix* temp = matrix_create(a->size[0], a->size[1]);
+    matrix_copy(a, temp);
     
     //resize/reset values of a 
     if (a->size[1] != b->size[1]) {
@@ -147,13 +147,13 @@ int Matrix_DotProd(matrix* a, matrix* b) {
         }
     }
 
-    Matrix_Free(temp);
+    matrix_free(temp);
     return EXIT_SUCCESS;
 }
 
 
 
-int Matrix_Scaler(matrix* a, double b) {
+int matrix_scaler(matrix* a, double b) {
 
     if (!CheckNull(a))
         return EXIT_FAILURE;
@@ -170,7 +170,7 @@ int Matrix_Scaler(matrix* a, double b) {
 
 
 
-int Matrix_ElemetWiseFunc1M(matrix* a, double (*fptr)(double)) {
+int matrix_elemetwise_func1m(matrix* a, double (*fptr)(double)) {
     if (!CheckNull(a))
         return EXIT_FAILURE;
 
@@ -186,7 +186,7 @@ int Matrix_ElemetWiseFunc1M(matrix* a, double (*fptr)(double)) {
 
 
 
-int Matrix_ElementWiseFunc2M(matrix* a, matrix* b, double (*fptrs)(double, double)) {
+int matrix_elementwise_func2m(matrix* a, matrix* b, double (*fptrs)(double, double)) {
     if (!CheckNull(a) || !CheckNull(b))
         return EXIT_FAILURE;
     if (a->size[0] != b->size[0] || a->size[1] != b->size[1])
@@ -204,27 +204,27 @@ int Matrix_ElementWiseFunc2M(matrix* a, matrix* b, double (*fptrs)(double, doubl
 }
 
 
-int Matrix_Add(matrix* a, matrix* b) {
-    return Matrix_ElementWiseFunc2M(a, b, &Add);
+int matrix_add(matrix* a, matrix* b) {
+    return matrix_elementwise_func2m(a, b, &Add);
 }
 
 
 
-int Matrix_Sub(matrix* a, matrix* b) {
-    return Matrix_ElementWiseFunc2M(a, b, &Sub);
+int matrix_sub(matrix* a, matrix* b) {
+    return matrix_elementwise_func2m(a, b, &Sub);
 }
 
 
 
 /* ===Transformation=== */
 
-int Matrix_Transpose(matrix* a) {
+int matrix_transpose(matrix* a) {
     if (!CheckNull(a))
         return EXIT_FAILURE;
     
     //switch size
-    matrix* temp = Matrix_Create(a->size[0], a->size[1]); 
-    Matrix_Copy(a, temp);
+    matrix* temp = matrix_create(a->size[0], a->size[1]); 
+    matrix_copy(a, temp);
     int tempSize = a->size[0];
     a->size[0] = a->size[1];
     a->size[1] = tempSize;
@@ -237,14 +237,14 @@ int Matrix_Transpose(matrix* a) {
         }
     }
 
-    Matrix_Free(temp);
+    matrix_free(temp);
     return EXIT_SUCCESS;
 }
 
 
 /* ===Misc=== */
 
-int Matrix_Copy(matrix* from, matrix* to) {
+int matrix_copy(matrix* from, matrix* to) {
     if (!CheckNull(from) || !CheckNull(to))
         return EXIT_FAILURE;
     
@@ -268,14 +268,14 @@ int Matrix_Copy(matrix* from, matrix* to) {
 }
 
 
-matrix* Matrix_VectorRow(matrix* m, int row) {
+matrix* matrix_get_vector_row(matrix* m, int row) {
     if (!CheckNull(m))
         return NULL;
     
     if (m->size[0] <= row)
         return NULL;
         
-    matrix* new = Matrix_Create(1, m->size[1]);
+    matrix* new = matrix_create(1, m->size[1]);
 
     for (int i = 0; i < m->size[1]; i++)
     {
@@ -285,7 +285,7 @@ matrix* Matrix_VectorRow(matrix* m, int row) {
     return new;
 }
 
-matrix* Matrix_VectorCol(matrix* m, int col) {
+matrix* matrix_get_vector_col(matrix* m, int col) {
     // printf("idfk\n");
     if (!CheckNull(m)) {
         printf("Failed null check");
@@ -296,7 +296,7 @@ matrix* Matrix_VectorCol(matrix* m, int col) {
     if (m->size[1] <= col)
         return NULL;
     
-    matrix* new = Matrix_Create(m->size[0], 1);
+    matrix* new = matrix_create(m->size[0], 1);
 
     for (int i = 0; i < m->size[0]; i++)
     {
@@ -306,7 +306,7 @@ matrix* Matrix_VectorCol(matrix* m, int col) {
     return new;
 }
 
-int Matrix_Equals(matrix* a, matrix* b) {
+int matrix_is_equal(matrix* a, matrix* b) {
     if (!CheckNull(a) || !CheckNull(b))
         return false;
     
@@ -325,7 +325,7 @@ int Matrix_Equals(matrix* a, matrix* b) {
     return true;
 }
 
-matrix* Matrix_SubMatrix(matrix* m, int rowStart, int rowEnd, int colStart, int colEnd) {
+matrix* matrix_submatrix(matrix* m, int rowStart, int rowEnd, int colStart, int colEnd) {
     // printf("sub matrix checks started\n");
     // checks
     if (m == NULL) return NULL;
@@ -333,7 +333,7 @@ matrix* Matrix_SubMatrix(matrix* m, int rowStart, int rowEnd, int colStart, int 
     if (rowEnd > m->size[0]) return NULL;
     if (colEnd > m->size[1]) return NULL;
     // printf("sub matrix checks passed\n");
-    matrix* sm = Matrix_Create(rowEnd-rowStart, colEnd-colStart);
+    matrix* sm = matrix_create(rowEnd-rowStart, colEnd-colStart);
     
     for (int rowi = rowStart; rowi < rowEnd; rowi++)
     {
@@ -347,7 +347,7 @@ matrix* Matrix_SubMatrix(matrix* m, int rowStart, int rowEnd, int colStart, int 
 
 /* ===Printing=== */
 
-int Matrix_Printf(matrix *m, int decimalPlaces) {
+int marix_printf(matrix *m, int decimalPlaces) {
 
    if (!CheckNull(m))
        return EXIT_FAILURE;
@@ -373,15 +373,15 @@ int Matrix_Printf(matrix *m, int decimalPlaces) {
     return EXIT_SUCCESS;
 }
 
-int Matrix_Print(matrix* m) {
-    return Matrix_Printf(m, 2);
+int matrix_print(matrix* m) {
+    return marix_printf(m, 2);
 }
 
 
 
 /* ===Get/Set=== */
 
-double Matrix_Get(matrix *m, int row, int col) {
+double matrix_get(matrix *m, int row, int col) {
     if (!CheckBounds(m, row, col)) {
         printf("col and row out of bounds of matrix size\n");
         return NAN;

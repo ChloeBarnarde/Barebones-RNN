@@ -26,14 +26,15 @@ struct rnn {
 } typedef rnn;
 
 // epoch
-struct training_data {
+struct rnn_epcoh {
     matrix* input; // X
     matrix* output; // Y
     matrix* testInput; // test X
     matrix* testOutput; // test Y
     int iterations;
-} typedef training_data;
+} typedef rnn_epcoh;
 
+// might move this to the header file?
 struct gradient_info {
     double loss;
     // = matrices =
@@ -50,41 +51,41 @@ struct gradient_info {
 /// @param r the model
 /// @param inputs x values, ensure there's one for each time step
 /// @return fitted y
-matrix* evaluate(rnn* r, matrix* inputs);
+matrix* rnn_evaluate(rnn* r, matrix* inputs);
 
 
-/// @brief Calculates the loss for a function. Only works for classification atm
+/// @brief Calculates the loss for a function. Only works for classification atm. Might move to header file?
 /// @param rnn rnn
 /// @param input input values
 /// @param target target values
 /// @param hprev previous h
 /// @return gradient info struct
-gradient_info* LossFunc(rnn* rnn, matrix* input, matrix* target, matrix* hprev);
+gradient_info* rnn_calc_gradient(rnn* rnn, matrix* input, matrix* target, matrix* hprev);
 
 /// @brief calculates the mean square error loss
 /// @param output what the model output
 /// @param target what the true values are
 /// @return loss value
-double MSE_Loss(matrix* output, matrix* target);
+double rnn_calc_mse_loss(matrix* output, matrix* target);
 
 /// @brief trains the rnn for the specified amount 'limit'
 /// @param r rnn to train
 /// @param epoch epoch data
 /// @param limit how many times to go through epoch
 /// @return exit status
-int TrainRNN(rnn* r, training_data* epoch, int limit, void (*onComplete)(double, double));
+int rnn_train(rnn* r, rnn_epcoh* epoch, int limit, void (*onComplete)(double, double));
 
 ///@brief tests the rnn on the given epoch and returns the loss
-double TestRNN(rnn* r, matrix* input, matrix* target, matrix* hprev);
+double rnn_test(rnn* r, matrix* input, matrix* target, matrix* hprev);
 
 /// @brief Initailize all the weights in the struct to sample from a normal distribution
 /// @param r the rnn to initalize the weights in
 /// @return exit status
-int InitializeWeights(rnn* r);
+int rnn_initialize_weights(rnn* r);
 
 /// @brief Free's all the weight matrices
 /// @param r the rnn to free the matrices from 
 /// @return the exit status
-int FreeWeights(rnn* r);
+int rnn_free_weights(rnn* r);
 
 #endif

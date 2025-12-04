@@ -11,13 +11,13 @@ void Sample(double smoothLoss, double test_smoothLoss) {
    fprintf(lossFile, "%lf,%lf\n", smoothLoss, test_smoothLoss); 
 }
 
-void CreateConfusionMatrix(rnn* r, training_data* epoch) {
+void CreateConfusionMatrix(rnn* r, rnn_epcoh* epoch) {
     lossFile = fopen("Output/ConfusionMatrixValues.csv", "w");
     fprintf(lossFile, "TR,PR,TW,PW\n");
 
     r->seqLen = epoch->testInput->size[1];
     printf("Evaluating confusion matrix on test data with seqLen: %d\n", r->seqLen);
-    matrix* results = evaluate(r, epoch->testInput);
+    matrix* results = rnn_evaluate(r, epoch->testInput);
     // confusion matrix values
     int true_red = 0;
     int pred_red = 0; // wrong prediction
@@ -31,8 +31,8 @@ void CreateConfusionMatrix(rnn* r, training_data* epoch) {
         double max_prob = 0;
         for (int rowi = 0; rowi < results->size[0]; rowi++)
         {
-            if (Matrix_Get(results, rowi, t) > max_prob) {
-                max_prob = Matrix_Get(results, rowi, t);
+            if (matrix_get(results, rowi, t) > max_prob) {
+                max_prob = matrix_get(results, rowi, t);
                 pred_class = rowi;
             }
         }
@@ -41,7 +41,7 @@ void CreateConfusionMatrix(rnn* r, training_data* epoch) {
         int true_class = -1;
         for (int rowi = 0; rowi < epoch->testOutput->size[0]; rowi++)
         {
-            if (Matrix_Get(epoch->testOutput, rowi, t) == 1) {
+            if (matrix_get(epoch->testOutput, rowi, t) == 1) {
                 true_class = rowi;
                 break;
             }
@@ -66,7 +66,7 @@ void CreateConfusionMatrix(rnn* r, training_data* epoch) {
     fprintf(lossFile, "%d,%d,%d,%d\n", true_red, pred_red, true_white, pred_white);
 
 
-    Matrix_Free(results);
+    matrix_free(results);
 
     fclose(lossFile);
 }
@@ -124,8 +124,8 @@ int main() {
     printf("Starting on allocating matrix\n");
     // x size of n-1 x char_types size
     // y size of n-1 x char_types size
-    matrix* X = Matrix_Create(one_hot_size, dataset_size);
-    matrix* Y = Matrix_Create(2, dataset_size); 
+    matrix* X = matrix_create(one_hot_size, dataset_size);
+    matrix* Y = matrix_create(2, dataset_size); 
     int i = 0;
     fp = fopen(fileName, "r");
     // populate X and Y matricies
@@ -181,8 +181,8 @@ int main() {
         }
     }
     fclose(fp);
-    matrix* testX = Matrix_Create(test_one_hot_size, test_dataset_size);
-    matrix* testY = Matrix_Create(2, test_dataset_size); 
+    matrix* testX = matrix_create(test_one_hot_size, test_dataset_size);
+    matrix* testY = matrix_create(2, test_dataset_size); 
     i = 0;
     fp = fopen(fileNameTest, "r");
     // populate X and Y matricies
@@ -221,9 +221,9 @@ int main() {
     r->hiddenSize = 50;
     r->outputSize = Y->size[0];
     r->learningRate = 1e-1;
-    InitializeWeights(r);
+    rnn_initialize_weights(r);
     
-    training_data* epoch = malloc(sizeof(training_data));
+    rnn_epcoh* epoch = malloc(sizeof(rnn_epcoh));
     epoch->iterations = dataset_size/50;
     epoch->input = X;
     epoch->output = Y;
@@ -234,7 +234,7 @@ int main() {
     lossFile = fopen("Output/output.csv", "w");
     fprintf(lossFile, "TrainLoss,TestLoss\n"); 
     printf("======= training started =======\n");
-    int result = TrainRNN(r, epoch, 200, &Sample);
+    int result = rnn_train(r, epoch, 200, &Sample);
     printf("======= training finished with exit code: %d =======\n", result);
     fclose(lossFile);
 
@@ -244,10 +244,10 @@ int main() {
 
     printf("Graphs have been saved to ./Output\n");
     
-    FreeWeights(r);
+    rnn_free_weights(r);
     free(r);
-    Matrix_Free(X);
-    Matrix_Free(Y);
+    matrix_free(X);
+    matrix_free(Y);
 
     return EXIT_SUCCESS;
 }
